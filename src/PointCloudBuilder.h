@@ -1,7 +1,7 @@
 #pragma once
 
 #include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+#include <pcl/point_types.h>  // PointXYZRGB için
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>

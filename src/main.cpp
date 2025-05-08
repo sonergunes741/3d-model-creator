@@ -1,22 +1,22 @@
 #include <iostream>
 #include <string>
 #include <vector>
-#include <filesystem>
+#include <filesystem>  // C++17 için
 #include <opencv2/opencv.hpp>
 
 #include "LaserLineDetector.h"
 #include "PointCloudBuilder.h"
 #include "MeshCreator.h"
 #include "ColorMapper.h"
-#include "FBXExporter.h"
+#include "OBJExporter.h"
 
-namespace fs = std::filesystem;
+namespace fs = std::filesystem;  // C++17 ile kullanılabilir
 
 // Komut satırı argümanları
 struct CommandLineArgs {
     std::string laserFolder = "/scan/laser/";
     std::string colorFolder = "/scan/color/";
-    std::string outputPath = "output/model.fbx";
+    std::string outputPath = "output/model.obj";
     int sampleCount = 200;
     bool debugMode = false;
 };
@@ -44,7 +44,7 @@ CommandLineArgs parseCommandLine(int argc, char** argv) {
             std::cout << "Seçenekler:" << std::endl;
             std::cout << "  --laser <klasör>   Lazer görüntüleri klasörü (varsayılan: /scan/laser/)" << std::endl;
             std::cout << "  --color <klasör>   Renk görüntüleri klasörü (varsayılan: /scan/color/)" << std::endl;
-            std::cout << "  --output <dosya>   Çıktı FBX dosyası (varsayılan: output/model.fbx)" << std::endl;
+            std::cout << "  --output <dosya>   Çıktı OBJ dosyası (varsayılan: output/model.obj)" << std::endl;
             std::cout << "  --samples <sayı>   İşlenecek görüntü sayısı (varsayılan: 200)" << std::endl;
             std::cout << "  --debug            Debug modunu etkinleştir" << std::endl;
             std::cout << "  --help             Bu yardım mesajını göster" << std::endl;
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     PointCloudBuilder pointCloudBuilder;
     MeshCreator meshCreator;
     ColorMapper colorMapper;
-    FBXExporter fbxExporter;
+    OBJExporter objExporter;
     
     // Debug modu kontrolü
     laserDetector.setDebugMode(args.debugMode);
@@ -203,17 +203,19 @@ int main(int argc, char** argv) {
     // Nokta bulutundan renk bilgisini al
     colorMapper.applyColorToMesh(mesh, pointCloudBuilder.getPointCloud());
     
-    // Adım 5: FBX olarak dışa aktar
-    std::cout << "5. Aşama: FBX dosyası oluşturuluyor..." << std::endl;
+    // Adım 5: OBJ olarak dışa aktar
+    std::cout << "5. Aşama: OBJ/MTL/PNG dosyaları oluşturuluyor..." << std::endl;
     
-    // Mesh'i FBX olarak dışa aktar
-    bool exportSuccess = fbxExporter.exportMesh(mesh, args.outputPath);
+    // Mesh'i OBJ olarak dışa aktar
+    objExporter.setTextureResolution(2048, 2048); // Yüksek çözünürlüklü texture
+    bool exportSuccess = objExporter.exportMesh(mesh, args.outputPath);
     
     if (exportSuccess) {
         std::cout << "\nİşlem başarıyla tamamlandı!" << std::endl;
         std::cout << "3D model oluşturuldu: " << args.outputPath << std::endl;
+        std::cout << "(.obj, .mtl ve .png dosyaları aynı dizinde)" << std::endl;
     } else {
-        std::cerr << "\nFBX dosyası oluşturulurken bir hata oluştu!" << std::endl;
+        std::cerr << "\nOBJ dosyası oluşturulurken bir hata oluştu!" << std::endl;
         return 1;
     }
     
