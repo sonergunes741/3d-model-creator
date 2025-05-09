@@ -51,7 +51,7 @@ make -j4
 
 ```bash
 # Temel kullanım
-./bin/3DModelCreator --laser /scan/laser/ --color /scan/color/ --output output/model.obj
+./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj
 
 # Tüm parametrelerle
 ./bin/3DModelCreator --laser /scan/laser/ --color /scan/color/ --output output/model.obj --samples 360 --debug
