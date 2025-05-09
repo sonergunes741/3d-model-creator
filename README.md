@@ -53,6 +53,10 @@ make -j4
 # Temel kullanım
 ./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj
 
+# Region of Interest (ROI) seçerek kullanım
+./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj --debug
+
+
 # Tüm parametrelerle
 ./bin/3DModelCreator --laser /scan/laser/ --color /scan/color/ --output output/model.obj --samples 360 --debug
 ```
