@@ -18,7 +18,7 @@ public:
      * @param upperThresh Lazer rengi için üst HSV eşiği
      */
     LaserLineDetector(
-        const cv::Scalar& lowerThresh = cv::Scalar(160, 100, 100),
+        const cv::Scalar& lowerThresh = cv::Scalar(140, 30, 30),  // Daha düşük değerler
         const cv::Scalar& upperThresh = cv::Scalar(179, 255, 255)
     );
 
@@ -45,10 +45,25 @@ public:
      */
     void setDebugMode(bool enable) { debugMode = enable; }
 
+    /**
+     * @brief Kontrast artırma seviyesini ayarlar
+     * 
+     * @param alpha Kontrast çarpanı (1.0 = değişiklik yok, >1.0 kontrast artırma)
+     * @param beta Parlaklık değeri (0 = değişiklik yok)
+     */
+    void setContrastEnhancement(double alpha = 1.5, double beta = 0) {
+        contrastAlpha = alpha;
+        contrastBeta = beta;
+        enhanceContrast = true;
+    }
+
 private:
     cv::Scalar lowerThreshold;
     cv::Scalar upperThreshold;
     bool debugMode;
+    bool enhanceContrast;
+    double contrastAlpha;
+    double contrastBeta;
 
     /**
      * @brief Konturlardan lazer çizgisini seçer

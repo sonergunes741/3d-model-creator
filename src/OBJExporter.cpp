@@ -251,10 +251,19 @@ cv::Mat OBJExporter::createTextureImage(
         }
     }
     
-    // Doldurulmamış pikselleri interpole et
-    cv::Mat mask = (texture == cv::Vec3b(0, 0, 0));
-    cv::Mat dist;
-    cv::distanceTransform(mask, dist, cv::DIST_L2, cv::DIST_MASK_PRECISE);
+    // Doldurulmamış pikselleri interpole et - DÜZELTILMIŞ KISIM
+    // 3 kanallı görüntüden tek kanallı maske oluştur
+    cv::Mat emptyPixelsMask = cv::Mat::zeros(textureHeight, textureWidth, CV_8UC1);
+    
+    // Boş pikselleri tespit et (siyah olanlar)
+    for (int y = 0; y < textureHeight; y++) {
+        for (int x = 0; x < textureWidth; x++) {
+            cv::Vec3b pixel = texture.at<cv::Vec3b>(y, x);
+            if (pixel[0] == 0 && pixel[1] == 0 && pixel[2] == 0) {
+                emptyPixelsMask.at<uchar>(y, x) = 255;  // Boş piksel
+            }
+        }
+    }
     
     // Basit bir yayılma algoritması
     for (int iterations = 0; iterations < 10; iterations++) {
@@ -262,20 +271,20 @@ cv::Mat OBJExporter::createTextureImage(
         
         for (int y = 1; y < textureHeight - 1; y++) {
             for (int x = 1; x < textureWidth - 1; x++) {
-                if (mask.at<uchar>(y, x) != 0) {
+                if (emptyPixelsMask.at<uchar>(y, x) > 0) {
                     // 4 komşudaki renklerin ortalamasını al
                     cv::Vec3b sum(0, 0, 0);
                     int count = 0;
                     
                     for (int dy = -1; dy <= 1; dy += 2) {
-                        if (mask.at<uchar>(y + dy, x) == 0) {
+                        if (y + dy >= 0 && y + dy < textureHeight && emptyPixelsMask.at<uchar>(y + dy, x) == 0) {
                             sum += texture.at<cv::Vec3b>(y + dy, x);
                             count++;
                         }
                     }
                     
                     for (int dx = -1; dx <= 1; dx += 2) {
-                        if (mask.at<uchar>(y, x + dx) == 0) {
+                        if (x + dx >= 0 && x + dx < textureWidth && emptyPixelsMask.at<uchar>(y, x + dx) == 0) {
                             sum += texture.at<cv::Vec3b>(y, x + dx);
                             count++;
                         }
@@ -283,7 +292,7 @@ cv::Mat OBJExporter::createTextureImage(
                     
                     if (count > 0) {
                         temp.at<cv::Vec3b>(y, x) = sum / count;
-                        mask.at<uchar>(y, x) = 0;
+                        emptyPixelsMask.at<uchar>(y, x) = 0; // Bu pikseli doldurduk
                     }
                 }
             }

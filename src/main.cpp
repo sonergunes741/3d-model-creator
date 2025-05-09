@@ -119,6 +119,13 @@ int main(int argc, char** argv) {
     
     // Bileşenleri oluştur
     LaserLineDetector laserDetector;
+    
+    // Daha düşük eşik değerleri ayarla
+    laserDetector.setThresholds(cv::Scalar(140, 30, 30), cv::Scalar(179, 255, 255));
+    
+    // Kontrast artırmayı ayarla
+    laserDetector.setContrastEnhancement(2.0, 0);  // Daha güçlü kontrast
+    
     PointCloudBuilder pointCloudBuilder;
     MeshCreator meshCreator;
     ColorMapper colorMapper;

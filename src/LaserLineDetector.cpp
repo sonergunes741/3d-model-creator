@@ -2,13 +2,31 @@
 #include <iostream>
 
 LaserLineDetector::LaserLineDetector(const cv::Scalar& lowerThresh, const cv::Scalar& upperThresh)
-    : lowerThreshold(lowerThresh), upperThreshold(upperThresh), debugMode(false) {
+    : lowerThreshold(lowerThresh), 
+      upperThreshold(upperThresh), 
+      debugMode(false),
+      enhanceContrast(true),  // Varsayılan olarak kontrast artırma aktif
+      contrastAlpha(1.5),     // Kontrast artırma değeri
+      contrastBeta(0) {
 }
 
 std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) {
+    // Görüntü ön işleme - kontrast artırma
+    cv::Mat processedImage;
+    if (enhanceContrast) {
+        image.convertTo(processedImage, -1, contrastAlpha, contrastBeta);
+        
+        if (debugMode) {
+            cv::imshow("Enhanced Image", processedImage);
+            cv::waitKey(1);
+        }
+    } else {
+        processedImage = image.clone();
+    }
+    
     // HSV formatına dönüştür
     cv::Mat hsvImage;
-    cv::cvtColor(image, hsvImage, cv::COLOR_BGR2HSV);
+    cv::cvtColor(processedImage, hsvImage, cv::COLOR_BGR2HSV);
 
     // Kırmızı renk aralığında eşikleme yap
     cv::Mat mask;
@@ -25,7 +43,7 @@ std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) 
 
     // Debug modunda görselleştir
     if (debugMode) {
-        cv::Mat debug = image.clone();
+        cv::Mat debug = processedImage.clone();
         cv::drawContours(debug, contours, -1, cv::Scalar(0, 255, 0), 2);
         cv::imshow("Laser Contours", debug);
         cv::imshow("Laser Mask", mask);
