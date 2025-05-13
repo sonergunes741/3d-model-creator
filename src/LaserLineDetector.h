@@ -56,6 +56,21 @@ public:
         contrastBeta = beta;
         enhanceContrast = true;
     }
+    
+    /**
+     * @brief İlgi bölgesini (ROI) ayarlar
+     * 
+     * @param x ROI'nin sol üst köşesinin x koordinatı
+     * @param y ROI'nin sol üst köşesinin y koordinatı
+     * @param width ROI'nin genişliği
+     * @param height ROI'nin yüksekliği
+     */
+    void setROI(int x, int y, int width, int height);
+    
+    /**
+     * @brief ROI kullanımını devre dışı bırakır
+     */
+    void disableROI();
 
 private:
     cv::Scalar lowerThreshold;
@@ -64,6 +79,8 @@ private:
     bool enhanceContrast;
     double contrastAlpha;
     double contrastBeta;
+    bool roiEnabled;
+    int roiX, roiY, roiWidth, roiHeight;
 
     /**
      * @brief Konturlardan lazer çizgisini seçer
