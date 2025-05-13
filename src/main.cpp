@@ -19,6 +19,8 @@ struct CommandLineArgs {
     std::string outputPath = "output/model.obj";
     int sampleCount = 200;
     bool debugMode = false;
+    bool useROI = false;
+    int roiX = 0, roiY = 0, roiWidth = 0, roiHeight = 0;
 };
 
 // Komut satırı argümanları işleme
@@ -38,6 +40,12 @@ CommandLineArgs parseCommandLine(int argc, char** argv) {
             args.sampleCount = std::stoi(argv[++i]);
         } else if (arg == "--debug") {
             args.debugMode = true;
+        } else if (arg == "--roi" && i + 4 < argc) {
+            args.useROI = true;
+            args.roiX = std::stoi(argv[++i]);
+            args.roiY = std::stoi(argv[++i]);
+            args.roiWidth = std::stoi(argv[++i]);
+            args.roiHeight = std::stoi(argv[++i]);
         } else if (arg == "--help") {
             std::cout << "3D Model Oluşturma Modülü" << std::endl;
             std::cout << "Kullanım: " << argv[0] << " [seçenekler]" << std::endl;
@@ -47,6 +55,7 @@ CommandLineArgs parseCommandLine(int argc, char** argv) {
             std::cout << "  --output <dosya>   Çıktı OBJ dosyası (varsayılan: output/model.obj)" << std::endl;
             std::cout << "  --samples <sayı>   İşlenecek görüntü sayısı (varsayılan: 200)" << std::endl;
             std::cout << "  --debug            Debug modunu etkinleştir" << std::endl;
+            std::cout << "  --roi x y w h      İlgi bölgesini (ROI) belirle (x,y: sol üst köşe, w,h: genişlik ve yükseklik)" << std::endl;
             std::cout << "  --help             Bu yardım mesajını göster" << std::endl;
             exit(0);
         }
@@ -126,6 +135,13 @@ int main(int argc, char** argv) {
     // Kontrast artırmayı ayarla
     laserDetector.setContrastEnhancement(2.0, 0);  // Daha güçlü kontrast
     
+    // ROI ayarla (eğer belirtildiyse)
+    if (args.useROI) {
+        laserDetector.setROI(args.roiX, args.roiY, args.roiWidth, args.roiHeight);
+        std::cout << "ROI etkinleştirildi: x=" << args.roiX << ", y=" << args.roiY 
+                 << ", genişlik=" << args.roiWidth << ", yükseklik=" << args.roiHeight << std::endl;
+    }
+    
     PointCloudBuilder pointCloudBuilder;
     MeshCreator meshCreator;
     ColorMapper colorMapper;
@@ -158,6 +174,31 @@ int main(int argc, char** argv) {
         if (i == 0) {
             imageWidth = laserImage.cols;
             imageHeight = laserImage.rows;
+            
+            // ROI belirtilmediyse ve ilk görüntüde debug modu açıksa, kullanıcıdan ROI seçmesini iste
+            if (args.debugMode && !args.useROI) {
+                std::cout << "\nİlgi alanı (ROI) seçmek ister misiniz? (e/h): ";
+                char response;
+                std::cin >> response;
+                
+                if (response == 'e' || response == 'E') {
+                    // Debug penceresi oluştur ve ROI seçimine hazırla
+                    cv::Mat firstImage = laserImage.clone();
+                    cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
+                    cv::resizeWindow("Select ROI", 800, 600);
+                    cv::imshow("Select ROI", firstImage);
+                    
+                    std::cout << "\nLütfen lazer çizgisini içeren bölgeyi seçin (fareyle dikdörtgen çizin)." << std::endl;
+                    cv::Rect selectedROI = cv::selectROI("Select ROI", firstImage, false, false);
+                    
+                    // ROI'yi ayarla
+                    laserDetector.setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
+                    std::cout << "\nROI seçildi: x=" << selectedROI.x << ", y=" << selectedROI.y 
+                             << ", genişlik=" << selectedROI.width << ", yükseklik=" << selectedROI.height << std::endl;
+                    
+                    cv::destroyWindow("Select ROI");
+                }
+            }
         }
         
         // Açı hesapla (her bir görüntü için 360 / totalImages derece dönüş)
