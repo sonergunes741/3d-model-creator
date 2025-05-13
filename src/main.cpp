@@ -197,9 +197,8 @@ int main(int argc, char** argv) {
     // Bardak için optimal tarama parametreleri
     pointCloudBuilder.setScanParameters(50.0f, 0.0f, 0.0f, 0.0f);
     
-    MeshCreator meshCreator;
-    // MeshCreator parametrelerini ayarla, eğer bir setDepth metodu varsa kullanın
-    // Yoksa doğrudan MeshCreator.cpp içinde değeri ayarlayın
+    // Optimum mesh kalitesi için 7 derinlik kullan (bardak gibi nesneler için)
+    MeshCreator meshCreator(7);
     
     ColorMapper colorMapper;
     OBJExporter objExporter;
@@ -215,6 +214,12 @@ int main(int argc, char** argv) {
     std::cout << "1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Başladı" << std::endl;
     
     for (int i = 0; i < totalImages; i++) {
+        // İlerleme göster
+        if (i % 10 == 0) {
+            std::cout << "İşlenen görüntü: " << i << "/" << totalImages << " (" 
+                     << (i * 100 / totalImages) << "%)\r" << std::flush;
+        }
+        
         // Lazer görüntüsünü yükle
         cv::Mat laserImage = cv::imread(laserFiles[i]);
         
@@ -271,7 +276,7 @@ int main(int argc, char** argv) {
         pointCloudBuilder.addLineToCloud(laserLine, angle, imageWidth, imageHeight);
     }
     
-    std::cout << "1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Tamamlandı" << std::endl;
+    std::cout << "\n1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Tamamlandı" << std::endl;
     std::cout << "Nokta bulutu filtreleniyor..." << std::endl;
     
     // Nokta bulutunu filtrele ve hazırla
@@ -281,6 +286,12 @@ int main(int argc, char** argv) {
     std::cout << "2. Aşama: Renk bilgisi işleniyor - Başladı" << std::endl;
     
     for (int i = 0; i < totalImages; i++) {
+        // İlerleme göster
+        if (i % 10 == 0) {
+            std::cout << "İşlenen renk görüntüsü: " << i << "/" << totalImages << " (" 
+                     << (i * 100 / totalImages) << "%)\r" << std::flush;
+        }
+        
         // Renkli görüntüyü yükle
         cv::Mat colorImage = cv::imread(colorFiles[i]);
         
@@ -296,30 +307,58 @@ int main(int argc, char** argv) {
         colorMapper.addColorData(colorImage, angle, imageWidth, imageHeight);
     }
     
-    std::cout << "2. Aşama: Renk bilgisi işleniyor - Tamamlandı" << std::endl;
+    std::cout << "\n2. Aşama: Renk bilgisi işleniyor - Tamamlandı" << std::endl;
     
     // Adım 3: Mesh oluştur
     std::cout << "3. Aşama: 3D mesh oluşturuluyor - Başladı" << std::endl;
     
+    // Nokta bulutunu al - getCloud() fonksiyonunu kullan
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = pointCloudBuilder.getCloud();
+    
+    if (cloud->empty()) {
+        std::cerr << "KRITIK HATA: Nokta bulutu boş! Model oluşturulamadı." << std::endl;
+        return 1;
+    }
+    
     // Nokta bulutundan mesh oluştur
-    pcl::PolygonMesh mesh = meshCreator.createMesh(pointCloudBuilder.getPointCloud());
+    pcl::PolygonMesh mesh = meshCreator.createMesh(cloud);
+
+    if (mesh.polygons.empty()) {
+        std::cerr << "KRITIK HATA: Mesh oluşturulamadı! Hiç polygon yok." << std::endl;
+        
+        // Try a different mesh creation approach or parameters
+        std::cout << "Alternatif mesh oluşturma yöntemi deneniyor..." << std::endl;
+        meshCreator.setDepth(8);  // Adjust depth parameter
+        meshCreator.setSmoothingParameters(0, 0);  // Disable smoothing
+        mesh = meshCreator.createMesh(cloud);
+        
+        if (mesh.polygons.empty()) {
+            std::cerr << "Alternatif yöntem de başarısız oldu. İşlem durduruluyor." << std::endl;
+            return 1;
+        }
+    }
     
     std::cout << "3. Aşama: 3D mesh oluşturuluyor - Tamamlandı" << std::endl;
+    std::cout << "Oluşturulan mesh polygon sayısı: " << mesh.polygons.size() << std::endl;
     
     // Adım 4: Mesh'e renk bilgisi uygula
     std::cout << "4. Aşama: Mesh renklendiriliyor - Başladı" << std::endl;
     
     // Nokta bulutundan renk bilgisini al
-    colorMapper.applyColorToMesh(mesh, pointCloudBuilder.getPointCloud());
+    colorMapper.applyColorToMesh(mesh, cloud);
     
     std::cout << "4. Aşama: Mesh renklendiriliyor - Tamamlandı" << std::endl;
     
     // Adım 5: OBJ olarak dışa aktar
     std::cout << "5. Aşama: OBJ/MTL/PNG dosyaları oluşturuluyor - Başladı" << std::endl;
     
+    // Texture boyutunu ayarla (OBJExporter'a texture çözünürlüğü ayarı için method eklenmeli)
+    objExporter.setUseVertexColors(true);
+    objExporter.setTextureResolution(2048, 2048);
+    
     // Mesh'i OBJ olarak dışa aktar
-    objExporter.setTextureResolution(2048, 2048); // Yüksek çözünürlüklü texture
-    bool exportSuccess = objExporter.exportMesh(mesh, args.outputPath);
+    std::string modelName = fs::path(args.outputPath).stem().string();
+    bool exportSuccess = objExporter.exportMesh(mesh, args.outputPath, modelName);
     
     std::cout << "5. Aşama: OBJ/MTL/PNG dosyaları oluşturuluyor - Tamamlandı" << std::endl;
     

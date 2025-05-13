@@ -1,7 +1,7 @@
 #pragma once
 
 #include <pcl/point_cloud.h>
-#include <pcl/point_types.h>  // PointXYZRGB için
+#include <pcl/point_types.h>
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
@@ -12,14 +12,19 @@
 class PointCloudBuilder {
 public:
     /**
-     * @brief Yapıcı fonksiyon
+     * @brief Varsayılan yapıcı fonksiyon
+     */
+    PointCloudBuilder();
+    
+    /**
+     * @brief Kamera parametreleriyle yapıcı fonksiyon
      * 
      * @param cameraMatrix Kamera kalibrasyon matrisi
      * @param distCoeffs Bozulma katsayıları
      */
     PointCloudBuilder(
-        const cv::Mat& cameraMatrix = cv::Mat::eye(3, 3, CV_64F),
-        const cv::Mat& distCoeffs = cv::Mat::zeros(5, 1, CV_64F)
+        const cv::Mat& cameraMatrix,
+        const cv::Mat& distCoeffs
     );
 
     /**
@@ -50,6 +55,13 @@ public:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr getPointCloud() const {
         return cloud;
     }
+    
+    /**
+     * @brief Oluşturulan nokta bulutunu alır (alternatif metod)
+     * 
+     * @return pcl::PointCloud<pcl::PointXYZRGB>::Ptr Nokta bulutu
+     */
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr getCloud();
 
     /**
      * @brief Kamera parametrelerini ayarlar

@@ -19,6 +19,14 @@ OBJExporter::OBJExporter()
 }
 
 bool OBJExporter::exportMesh(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName) {
+    // Mesh geçerlilik kontrolü
+    if (mesh.polygons.empty()) {
+        std::cerr << "HATA: Mesh boş veya polygon içermiyor!" << std::endl;
+        return false;
+    }
+
+    std::cout << "OBJ dışa aktarılıyor. Polygon sayısı: " << mesh.polygons.size() << std::endl;
+    
     // Çıktı dizinini oluştur
     fs::path outputDir = fs::path(outputPath).parent_path();
     try {
@@ -58,7 +66,7 @@ bool OBJExporter::exportMesh(const pcl::PolygonMesh& mesh, const std::string& ou
     }
 
     // OBJ dosyasını oluştur
-    bool objSuccess = writeOBJFile(mesh, objFilePath, mtlFileName, textureFileName);
+    bool objSuccess = writeOBJFile(mesh, objFilePath, mtlFileName + ".mtl", textureFileName);
     if (!objSuccess) {
         std::cerr << "OBJ dosyası oluşturma hatası!" << std::endl;
         return false;
@@ -74,9 +82,20 @@ bool OBJExporter::writeOBJFile(
     const std::string& mtlFileName,
     const std::string& textureFileName) {
     
+    // Mesh geçerlilik kontrolü
+    if (mesh.polygons.empty()) {
+        std::cerr << "HATA: Mesh boş veya polygon içermiyor!" << std::endl;
+        return false;
+    }
+
     // Nokta bulutu çıkar
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud = extractColors(mesh);
     
+    if (cloud->empty()) {
+        std::cerr << "HATA: Nokta bulutu boş!" << std::endl;
+        return false;
+    }
+
     // UV koordinatlarını oluştur
     std::vector<std::pair<float, float>> uvCoordinates = generateUVCoordinates(mesh);
     
@@ -88,8 +107,8 @@ bool OBJExporter::writeOBJFile(
     
     // OBJ başlığı
     objFile << "# OBJ file created by 3D Model Creator" << std::endl;
-    objFile << "mtllib " << mtlFileName << ".mtl" << std::endl;
-    objFile << "o " << fs::path(objFilePath).filename().string() << std::endl;
+    objFile << "mtllib " << mtlFileName << std::endl;
+    objFile << "o " << fs::path(objFilePath).stem().string() << std::endl;
     
     // Vertex pozisyonları
     for (size_t i = 0; i < cloud->points.size(); i++) {
@@ -101,29 +120,41 @@ bool OBJExporter::writeOBJFile(
         objFile << std::endl;
     }
     
-    // Texture koordinatları
-    for (const auto& uv : uvCoordinates) {
-        objFile << "vt " << uv.first << " " << uv.second << std::endl;
+    // Texture koordinatları - Her vertex için bir tane olduğundan emin ol
+    for (size_t i = 0; i < cloud->points.size(); i++) {
+        float u = 0.0f, v = 0.0f;
+        if (i < uvCoordinates.size()) {
+            u = uvCoordinates[i].first;
+            v = uvCoordinates[i].second;
+        }
+        objFile << "vt " << u << " " << v << std::endl;
     }
     
-    // Normal vektörleri (basit olarak Z+ yönünde)
-    objFile << "vn 0.0 0.0 1.0" << std::endl;
+    // Normal vektörleri - Her vertex için basit bir normal
+    for (size_t i = 0; i < cloud->points.size(); i++) {
+        objFile << "vn 0.0 0.0 1.0" << std::endl;
+    }
     
     // Materyal kullan
-    objFile << "usemtl " << fs::path(mtlFileName).filename().string() << "_material" << std::endl;
+    objFile << "usemtl " << fs::path(mtlFileName).stem().string() << "_material" << std::endl;
     
     // Yüzleri yaz
     for (size_t i = 0; i < mesh.polygons.size(); i++) {
         const pcl::Vertices& polygon = mesh.polygons[i];
-        objFile << "f";
         
-        for (size_t j = 0; j < polygon.vertices.size(); j++) {
-            size_t vertexIndex = polygon.vertices[j] + 1; // OBJ 1-indexed
-            // Vertex/Texture/Normal indeksi
-            objFile << " " << vertexIndex << "/" << vertexIndex << "/1";
+        // En az 3 vertex içeren polygonları yazıyoruz
+        if (polygon.vertices.size() >= 3) {
+            objFile << "f";
+            
+            for (size_t j = 0; j < polygon.vertices.size(); j++) {
+                size_t vertexIndex = polygon.vertices[j] + 1; // OBJ 1-indexed
+                
+                // Vertex/Texture/Normal indeksi
+                objFile << " " << vertexIndex << "/" << vertexIndex << "/" << vertexIndex;
+            }
+            
+            objFile << std::endl;
         }
-        
-        objFile << std::endl;
     }
     
     objFile.close();
@@ -152,7 +183,7 @@ bool OBJExporter::writeMTLFile(
     mtlFile << "Ns 10.0" << std::endl;                // Specular exponent
     mtlFile << "d 1.0" << std::endl;                  // Opacity
     mtlFile << "illum 2" << std::endl;                // Illumination model
-    mtlFile << "map_Kd " << textureFileName << std::endl;  // Diffuse texture
+    mtlFile << "map_Kd " << textureFileName << ".png" << std::endl;  // Diffuse texture
     
     mtlFile.close();
     std::cout << "MTL dosyası oluşturuldu: " << mtlFilePath << std::endl;
@@ -163,6 +194,18 @@ bool OBJExporter::writeMTLFile(
 bool OBJExporter::writeTextureFile(
     const pcl::PolygonMesh& mesh,
     const std::string& textureFilePath) {
+    
+    // Mesh geçerlilik kontrolü
+    if (mesh.polygons.empty()) {
+        std::cerr << "HATA: Texture oluşturma için mesh boş veya polygon içermiyor!" << std::endl;
+        // Geçici bir texture oluştur - tamamen beyaz
+        cv::Mat defaultTexture = cv::Mat(textureHeight, textureWidth, CV_8UC3, cv::Scalar(255, 255, 255));
+        bool success = cv::imwrite(textureFilePath, defaultTexture);
+        if (success) {
+            std::cout << "Varsayılan boş texture oluşturuldu: " << textureFilePath << std::endl;
+        }
+        return success;
+    }
     
     // UV koordinatlarını oluştur
     std::vector<std::pair<float, float>> uvCoordinates = generateUVCoordinates(mesh);
@@ -203,9 +246,15 @@ std::vector<std::pair<float, float>> OBJExporter::generateUVCoordinates(const pc
         float u = (angle + M_PI) / (2.0f * M_PI);
         
         // V koordinatı için normalize edilmiş yükseklik kullan
-        float v = (point.y - min_pt.y) / (max_pt.y - min_pt.y);
+        float v = 0.5f; // Varsayılan değer
         
-        // Aralığı 0-1 arasında tutyoğa dikkat et
+        // y-ekseninde normalleştirme için kontrol
+        float height_range = max_pt.y - min_pt.y;
+        if (height_range > 0.0001f) {
+            v = (point.y - min_pt.y) / height_range;
+        }
+        
+        // Aralığı 0-1 arasında tutmaya dikkat et
         u = std::min(1.0f, std::max(0.0f, u));
         v = std::min(1.0f, std::max(0.0f, v));
         
@@ -220,6 +269,15 @@ pcl::PointCloud<pcl::PointXYZRGB>::Ptr OBJExporter::extractColors(const pcl::Pol
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr colorCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
     pcl::fromPCLPointCloud2(mesh.cloud, *colorCloud);
     
+    // Eğer renk bilgisi yoksa, varsayılan bir renk ata
+    if (colorCloud->empty()) {
+        std::cerr << "UYARI: Mesh'ten renk bilgisi çıkarılamadı, varsayılan renk atanıyor." << std::endl;
+        colorCloud->points.resize(1);
+        colorCloud->points[0].r = 255;
+        colorCloud->points[0].g = 255;
+        colorCloud->points[0].b = 255;
+    }
+    
     return colorCloud;
 }
 
@@ -232,6 +290,13 @@ cv::Mat OBJExporter::createTextureImage(
     
     // Texture görüntüsünü oluştur
     cv::Mat texture = cv::Mat::zeros(textureHeight, textureWidth, CV_8UC3);
+    
+    // Nokta bulutu boşsa veya UV koordinatları yoksa
+    if (colorCloud->empty() || uvCoordinates.empty()) {
+        // Varsayılan beyaz texture döndür
+        texture = cv::Mat(textureHeight, textureWidth, CV_8UC3, cv::Scalar(255, 255, 255));
+        return texture;
+    }
     
     // Her bir vertex için
     for (size_t i = 0; i < colorCloud->points.size(); i++) {
@@ -251,8 +316,7 @@ cv::Mat OBJExporter::createTextureImage(
         }
     }
     
-    // Doldurulmamış pikselleri interpole et - DÜZELTILMIŞ KISIM
-    // 3 kanallı görüntüden tek kanallı maske oluştur
+    // Doldurulmamış pikselleri interpole et
     cv::Mat emptyPixelsMask = cv::Mat::zeros(textureHeight, textureWidth, CV_8UC1);
     
     // Boş pikselleri tespit et (siyah olanlar)
@@ -299,6 +363,15 @@ cv::Mat OBJExporter::createTextureImage(
         }
         
         texture = temp;
+    }
+    
+    // Hala boş kalan pikselleir beyaz yap
+    for (int y = 0; y < textureHeight; y++) {
+        for (int x = 0; x < textureWidth; x++) {
+            if (emptyPixelsMask.at<uchar>(y, x) > 0) {
+                texture.at<cv::Vec3b>(y, x) = cv::Vec3b(255, 255, 255);
+            }
+        }
     }
     
     // Texture'ı yumuşat
