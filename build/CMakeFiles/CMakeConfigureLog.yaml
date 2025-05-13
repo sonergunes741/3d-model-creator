@@ -2001,3 +2001,343 @@ events:
         
       exitCode: 0
 ...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_5d2a0/fast
+        gmake: Warning: File 'Makefile' has modification time 0.1 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_5d2a0.dir/build.make CMakeFiles/cmTC_5d2a0.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_5d2a0.dir/flags.make' has modification time 0.077 s in the future
+        Building C object CMakeFiles/cmTC_5d2a0.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_5d2a0.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA/test_mpi.c
+        Linking C executable cmTC_5d2a0
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_5d2a0.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_5d2a0.dir/test_mpi.c.o -o cmTC_5d2a0  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-U56oiA'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_f5884/fast
+        gmake: Warning: File 'Makefile' has modification time 0.49 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_f5884.dir/build.make CMakeFiles/cmTC_f5884.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_f5884.dir/flags.make' has modification time 0.48 s in the future
+        Building C object CMakeFiles/cmTC_f5884.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_f5884.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms/test_mpi.c
+        Linking C executable cmTC_f5884
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_f5884.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_f5884.dir/test_mpi.c.o -o cmTC_f5884  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-BWKfms'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_ddf0d/fast
+        gmake: Warning: File 'Makefile' has modification time 0.052 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_ddf0d.dir/build.make CMakeFiles/cmTC_ddf0d.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_ddf0d.dir/flags.make' has modification time 0.026 s in the future
+        Building C object CMakeFiles/cmTC_ddf0d.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_ddf0d.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W/test_mpi.c
+        Linking C executable cmTC_ddf0d
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_ddf0d.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_ddf0d.dir/test_mpi.c.o -o cmTC_ddf0d  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-oHZJ2W'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_16776/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_16776.dir/build.make CMakeFiles/cmTC_16776.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B'
+        Building C object CMakeFiles/cmTC_16776.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_16776.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B/test_mpi.c
+        Linking C executable cmTC_16776
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_16776.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_16776.dir/test_mpi.c.o -o cmTC_16776  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-yjg30B'
+        
+      exitCode: 0
+...
+
+---
+events:
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_713b2/fast
+        gmake: Warning: File 'Makefile' has modification time 0.77 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_713b2.dir/build.make CMakeFiles/cmTC_713b2.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_713b2.dir/flags.make' has modification time 0.75 s in the future
+        Building C object CMakeFiles/cmTC_713b2.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_713b2.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO/test_mpi.c
+        Linking C executable cmTC_713b2
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_713b2.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_713b2.dir/test_mpi.c.o -o cmTC_713b2  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-2SyvRO'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_fd455/fast
+        gmake: Warning: File 'Makefile' has modification time 0.28 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_fd455.dir/build.make CMakeFiles/cmTC_fd455.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_fd455.dir/flags.make' has modification time 0.26 s in the future
+        Building C object CMakeFiles/cmTC_fd455.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_fd455.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN/test_mpi.c
+        Linking C executable cmTC_fd455
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_fd455.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_fd455.dir/test_mpi.c.o -o cmTC_fd455  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-CNh5iN'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_7ee12/fast
+        gmake: Warning: File 'Makefile' has modification time 0.92 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_7ee12.dir/build.make CMakeFiles/cmTC_7ee12.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_7ee12.dir/flags.make' has modification time 0.9 s in the future
+        Building C object CMakeFiles/cmTC_7ee12.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_7ee12.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ/test_mpi.c
+        Linking C executable cmTC_7ee12
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_7ee12.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_7ee12.dir/test_mpi.c.o -o cmTC_7ee12  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-DfvzWZ'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1278 (try_compile)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1322 (_MPI_try_staged_settings)"
+      - "/usr/share/cmake-3.28/Modules/FindMPI.cmake:1645 (_MPI_check_lang_works)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/VTK-vtk-module-find-packages.cmake:397 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/vtk-config.cmake:150 (include)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:275 (find_package)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:324 (find_VTK)"
+      - "/usr/lib/x86_64-linux-gnu/cmake/pcl/PCLConfig.cmake:567 (find_external_library)"
+      - "CMakeLists.txt:17 (find_package)"
+    description: "The MPI test test_mpi for C in mode normal"
+    directories:
+      source: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz"
+      binary: "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz"
+    cmakeVariables:
+      CMAKE_C_FLAGS: " -fopenmp"
+      CMAKE_C_FLAGS_DEBUG: "-g"
+      CMAKE_EXE_LINKER_FLAGS: ""
+      CMAKE_MODULE_PATH: "/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1/patches/99;/usr/lib/x86_64-linux-gnu/cmake/vtk-9.1;/usr/lib/x86_64-linux-gnu/cmake/pcl/Modules"
+    buildResult:
+      variable: "MPI_RESULT_C_test_mpi_normal"
+      cached: true
+      stdout: |
+        Change Dir: '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_a8234/fast
+        gmake: Warning: File 'Makefile' has modification time 0.55 s in the future
+        /usr/bin/gmake  -f CMakeFiles/cmTC_a8234.dir/build.make CMakeFiles/cmTC_a8234.dir/build
+        gmake[1]: Entering directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz'
+        gmake[1]: Warning: File 'CMakeFiles/cmTC_a8234.dir/flags.make' has modification time 0.53 s in the future
+        Building C object CMakeFiles/cmTC_a8234.dir/test_mpi.c.o
+        /usr/bin/cc  -isystem /usr/lib/x86_64-linux-gnu/openmpi/include -isystem /usr/lib/x86_64-linux-gnu/openmpi/include/openmpi -fopenmp  -o CMakeFiles/cmTC_a8234.dir/test_mpi.c.o -c /mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz/test_mpi.c
+        Linking C executable cmTC_a8234
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_a8234.dir/link.txt --verbose=1
+        /usr/bin/cc  -fopenmp  -L/usr/lib/x86_64-linux-gnu/openmpi/lib CMakeFiles/cmTC_a8234.dir/test_mpi.c.o -o cmTC_a8234  /usr/lib/x86_64-linux-gnu/libmpi.so 
+        gmake[1]: warning:  Clock skew detected.  Your build may be incomplete.
+        gmake[1]: Leaving directory '/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/CMakeFiles/CMakeScratch/TryCompile-jUScxz'
+        gmake: warning:  Clock skew detected.  Your build may be incomplete.
+        
+      exitCode: 0
+...
