@@ -3180,6 +3180,8 @@ CMakeFiles/3DModelCreator.dir/src/MeshCreator.cpp.o
  /usr/include/pcl-1.14/pcl/surface/gp3.h
  /usr/include/pcl-1.14/pcl/surface/impl/processing.hpp
  /usr/include/pcl-1.14/pcl/surface/impl/reconstruction.hpp
+ /usr/include/pcl-1.14/pcl/surface/marching_cubes.h
+ /usr/include/pcl-1.14/pcl/surface/marching_cubes_hoppe.h
  /usr/include/pcl-1.14/pcl/surface/mls.h
  /usr/include/pcl-1.14/pcl/surface/poisson.h
  /usr/include/pcl-1.14/pcl/surface/processing.h
