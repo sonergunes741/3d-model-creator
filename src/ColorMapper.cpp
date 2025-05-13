@@ -27,7 +27,21 @@ void ColorMapper::addColorData(const cv::Mat& colorImage, float angle, int image
     colorData.push_back(centerLine);
     angles.push_back(angle);
     
-    std::cout << "Açı " << angle << " için renk verisi eklendi." << std::endl;
+    // Bu satırı kaldırdık veya değiştirdik:
+    static bool firstLog = true;
+    static bool lastLog = false;
+    
+    // Sadece ilk açı için mesaj göster
+    if (firstLog) {
+        std::cout << "Renk verileri işleniyor - İlk açı: " << angle << "°" << std::endl;
+        firstLog = false;
+    }
+    
+    // Son açıda mesaj göster (opsiyonel)
+    if (angle > 355.0f && !lastLog) {  // 355 değeri ayarlanabilir
+        std::cout << "Renk verileri işleniyor - Son açı: " << angle << "°" << std::endl;
+        lastLog = true;
+    }
 }
 
 std::vector<cv::Vec3b> ColorMapper::extractCenterLineColors(const cv::Mat& colorImage, int imageWidth) {

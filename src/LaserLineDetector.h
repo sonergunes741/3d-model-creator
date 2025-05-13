@@ -18,7 +18,7 @@ public:
      * @param upperThresh Lazer rengi için üst HSV eşiği
      */
     LaserLineDetector(
-        const cv::Scalar& lowerThresh = cv::Scalar(140, 30, 30),  // Daha düşük değerler
+        const cv::Scalar& lowerThresh = cv::Scalar(140, 30, 30),
         const cv::Scalar& upperThresh = cv::Scalar(179, 255, 255)
     );
 
@@ -43,7 +43,7 @@ public:
      * 
      * @param enable Debug modu aktif/pasif
      */
-    void setDebugMode(bool enable) { debugMode = enable; }
+    void setDebugMode(bool enable);
 
     /**
      * @brief Kontrast artırma seviyesini ayarlar
@@ -51,11 +51,7 @@ public:
      * @param alpha Kontrast çarpanı (1.0 = değişiklik yok, >1.0 kontrast artırma)
      * @param beta Parlaklık değeri (0 = değişiklik yok)
      */
-    void setContrastEnhancement(double alpha = 1.5, double beta = 0) {
-        contrastAlpha = alpha;
-        contrastBeta = beta;
-        enhanceContrast = true;
-    }
+    void setContrastEnhancement(double alpha = 1.5, double beta = 0);
     
     /**
      * @brief İlgi bölgesini (ROI) ayarlar
@@ -71,6 +67,45 @@ public:
      * @brief ROI kullanımını devre dışı bırakır
      */
     void disableROI();
+    
+    /**
+     * @brief ROI üzerinde görüntü işleme uygulanıp lazer çizgisi tespit edilir
+     *
+     * @param image Lazer görüntüsü
+     * @return bool İşlem başarılı mı
+     */
+    bool optimizeROIAndDetectLaser(const cv::Mat& image);
+
+    /**
+     * @brief Gaussian blur parametrelerini ayarlar
+     *
+     * @param kernelSize Gaussian blur çekirdeği boyutu (tek sayı olmalı)
+     * @param sigma Gaussian blur sigma değeri
+     */
+    void setGaussianBlur(int kernelSize, double sigma);
+
+    /**
+     * @brief Median blur parametrelerini ayarlar
+     *
+     * @param kernelSize Median blur çekirdeği boyutu (tek sayı olmalı)
+     */
+    void setMedianBlur(int kernelSize);
+    
+    /**
+     * @brief Erosion parametrelerini ayarlar
+     *
+     * @param iterations Erosion iterasyon sayısı
+     * @param kernelSize Erosion çekirdeği boyutu
+     */
+    void setErosion(int iterations, int kernelSize);
+    
+    /**
+     * @brief Dilation parametrelerini ayarlar
+     *
+     * @param iterations Dilation iterasyon sayısı
+     * @param kernelSize Dilation çekirdeği boyutu
+     */
+    void setDilation(int iterations, int kernelSize);
 
 private:
     cv::Scalar lowerThreshold;
@@ -81,6 +116,22 @@ private:
     double contrastBeta;
     bool roiEnabled;
     int roiX, roiY, roiWidth, roiHeight;
+    int binaryThreshold;
+    
+    // Blurring parametreleri
+    bool useGaussianBlur;
+    int gaussianKernelSize;
+    double gaussianSigma;
+    bool useMedianBlur;
+    int medianKernelSize;
+    
+    // Morfolojik işlem parametreleri
+    bool useErosion;
+    int erosionIterations;
+    int erosionKernelSize;
+    bool useDilation;
+    int dilationIterations;
+    int dilationKernelSize;
 
     /**
      * @brief Konturlardan lazer çizgisini seçer
