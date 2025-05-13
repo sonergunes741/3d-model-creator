@@ -59,6 +59,7 @@ make -j4
 # Threshold Adjust ile kullanım
 ./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj --debug --adjust-threshold
 
+# Recommended
 # Interactive mode ile Digital Image Processing teknikleri kullanımı
 ./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj --debug --interactive
 

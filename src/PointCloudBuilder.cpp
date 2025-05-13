@@ -5,6 +5,19 @@
 #include <cmath>
 #include <iostream>
 
+// Default constructor that initializes the cloud
+PointCloudBuilder::PointCloudBuilder() {
+    // Initialize an empty point cloud
+    cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+    
+    // Set default scanning parameters
+    scanRadius = 50.0f;
+    scanCenterX = 0.0f;
+    scanCenterY = 0.0f;
+    scanCenterZ = 0.0f;
+}
+
+// Constructor with camera parameters
 PointCloudBuilder::PointCloudBuilder(const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs)
     : cameraMatrix(cameraMatrix.clone()), 
       distCoeffs(distCoeffs.clone()),
@@ -25,14 +38,22 @@ void PointCloudBuilder::addLineToCloud(
     if (laserLine.empty()) {
         return;
     }
+    
+    // Make sure the cloud is initialized
+    if (!cloud) {
+        cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+    }
 
     // Her bir lazer çizgisi noktası için
     for (const auto& point : laserLine) {
         // Görüntü noktasını 3D'ye dönüştür
         pcl::PointXYZRGB p3d = projectPointTo3D(point, angle, imageWidth, imageHeight);
         
-        // Nokta bulutuna ekle
-        cloud->points.push_back(p3d);
+        // Make sure the point has valid coordinates
+        if (std::isfinite(p3d.x) && std::isfinite(p3d.y) && std::isfinite(p3d.z)) {
+            // Nokta bulutuna ekle
+            cloud->points.push_back(p3d);
+        }
     }
 }
 
@@ -94,7 +115,7 @@ pcl::PointXYZRGB PointCloudBuilder::projectPointTo3D(
 }
 
 void PointCloudBuilder::processPointCloud() {
-    if (cloud->empty()) {
+    if (!cloud || cloud->empty()) {
         std::cerr << "HATA: Boş nokta bulutu!" << std::endl;
         return;
     }
@@ -148,6 +169,14 @@ void PointCloudBuilder::processPointCloud() {
     }
     
     std::cout << "Final nokta bulutu boyutu: " << cloud->points.size() << std::endl;
+}
+
+// Get the point cloud (added getter method)
+pcl::PointCloud<pcl::PointXYZRGB>::Ptr PointCloudBuilder::getCloud() {
+    if (!cloud) {
+        cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
+    }
+    return cloud;
 }
 
 void PointCloudBuilder::setCameraParameters(const cv::Mat& cameraMatrix, const cv::Mat& distCoeffs) {
