@@ -11,6 +11,15 @@
  */
 class PointCloudBuilder {
 public:
+    struct PointWithImageInfo {
+        pcl::PointXYZRGB point;
+        float angle;
+        int imageX;
+        int imageY;
+        int imageIndex; // index of the scan angle/color image
+    };
+    std::vector<PointWithImageInfo> pointImageInfo;
+
     /**
      * @brief Varsayılan yapıcı fonksiyon
      */

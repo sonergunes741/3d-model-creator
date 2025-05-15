@@ -53,6 +53,16 @@ void PointCloudBuilder::addLineToCloud(
         if (std::isfinite(p3d.x) && std::isfinite(p3d.y) && std::isfinite(p3d.z)) {
             // Nokta bulutuna ekle
             cloud->points.push_back(p3d);
+            // Store image info for color mapping
+            PointWithImageInfo info;
+            info.point = p3d;
+            info.angle = angle;
+            info.imageX = point.x;
+            info.imageY = point.y;
+            // imageIndex is the scan index, which can be derived from angle if needed
+            // For now, set to -1 (will be set in main loop if needed)
+            info.imageIndex = -1;
+            pointImageInfo.push_back(info);
         }
     }
 }
@@ -66,48 +76,37 @@ pcl::PointXYZRGB PointCloudBuilder::projectPointTo3D(
     // Açıyı radyana çevir
     float angleRad = angle * M_PI / 180.0f;
     
-    // Görüntü merkezine göre normalize et ve Y-ekseni tersine çevir (OpenCV'de Y aşağı doğrudur)
-    float normalizedX = (point.x - imageWidth / 2.0f) / (imageWidth / 2.0f);
-    float normalizedY = -1.0f * (point.y - imageHeight / 2.0f) / (imageHeight / 2.0f);
+    // Parameters from setScanParameters:
+    // scanRadius: General scaling factor for the object (used for height and radial extent)
+    // scanCenterX, scanCenterY, scanCenterZ: Offsets for the object's center
+
+    // Calculate World Y-coordinate based on image point.y
+    // normalized_image_y: 0 (bottom of image) to 1 (top of image)
+    float normalized_image_y = ((float)imageHeight - point.y) / (float)imageHeight;
+    // y_world ranges from (scanCenterY - scanRadius/2) to (scanCenterY + scanRadius/2)
+    float y_world = scanCenterY + (normalized_image_y * scanRadius) - (scanRadius / 2.0f);
+
+    // Calculate Profile Radius based on image point.x
+    // normalized_image_x: -1 (left edge of image) to 1 (right edge of image)
+    float normalized_image_x = ((float)point.x - imageWidth / 2.0f) / (imageWidth / 2.0f);
     
-    // Bardak profili için parabol fonksiyonu kullan
-    // h - yükseklik normalize edilmiş şekilde 0-1 arası
-    float h = (normalizedY + 1.0f) / 2.0f; // 0-1 aralığına dönüştür
+    // x_local_signed: Horizontal displacement from center, scaled by scanRadius/2.
+    // This represents the point's coordinate in the object's local X-axis before turntable rotation.
+    float x_local_signed = normalized_image_x * (scanRadius / 2.0f);
     
-    float cupHeight = scanRadius * 0.7f;           // Bardağın yüksekliği
-    float cupBottomRadius = scanRadius * 0.3f;     // Bardağın alt kısmının yarıçapı
-    float cupMiddleRadius = scanRadius * 0.5f;     // Bardağın orta kısmının yarıçapı
-    float cupTopRadius = scanRadius * 0.45f;       // Bardağın üst kısmının yarıçapı
-    
-    // Bardak profiline göre yarıçapı hesapla (bardağın yüksekliğe bağlı profili)
-    float profileRadius;
-    
-    if (h < 0.3f) {
-        // Alt kısım
-        float t = h / 0.3f;
-        profileRadius = cupBottomRadius + (cupMiddleRadius - cupBottomRadius) * t;
-    } else if (h < 0.7f) {
-        // Orta kısım
-        profileRadius = cupMiddleRadius;
-    } else {
-        // Üst kısım
-        float t = (h - 0.7f) / 0.3f;
-        profileRadius = cupMiddleRadius + (cupTopRadius - cupMiddleRadius) * t;
-    }
-    
-    // Bardağın yükseklik ayarlaması
-    float y = scanCenterY + (h * cupHeight) - (cupHeight / 2.0f);
+    // The profileRadius is the absolute distance from the rotation axis.
+    float profileRadius = std::abs(x_local_signed);
     
     // Silindirik koordinatlardan Kartezyen koordinatlara dönüşüm
-    float x = scanCenterX + profileRadius * std::cos(angleRad);
-    float z = scanCenterZ + profileRadius * std::sin(angleRad);
+    float x_world = scanCenterX + profileRadius * std::cos(angleRad);
+    float z_world = scanCenterZ + profileRadius * std::sin(angleRad);
     
     // PCL nokta oluştur
     pcl::PointXYZRGB p3d;
-    p3d.x = x;
-    p3d.y = y;
-    p3d.z = z;
-    p3d.r = 255;
+    p3d.x = x_world;
+    p3d.y = y_world;
+    p3d.z = z_world;
+    p3d.r = 255; // Default color, will be overwritten by ColorMapper
     p3d.g = 255;
     p3d.b = 255;
     
