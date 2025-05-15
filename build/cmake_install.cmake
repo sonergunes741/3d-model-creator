@@ -1,4 +1,4 @@
-# Install script for directory: /mnt/c/Users/soner/Documents/GitHub/3d-model-creator
+# Install script for directory: /workspaces/3d-model-creator
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/mnt/c/Users/soner/Documents/GitHub/3d-model-creator/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/workspaces/3d-model-creator/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
