@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include <string>
+#include "PointCloudBuilder.h"
 
 /**
  * @brief Renk bilgisini 3D modele uygulayan sınıf
@@ -20,16 +21,12 @@ public:
     /**
      * @brief Görüntülerden renk bilgisi ekler
      * 
-     * @param colorImage Renk bilgisi içeren görüntü
+     * @param colorImage Renk bilgisi içeren görüntü (tüm görüntü)
      * @param angle Görüntünün çekildiği açı (derece)
-     * @param imageWidth Görüntü genişliği
-     * @param imageHeight Görüntü yüksekliği
      */
     void addColorData(
         const cv::Mat& colorImage, 
-        float angle, 
-        int imageWidth, 
-        int imageHeight
+        float angle
     );
 
     /**
@@ -40,7 +37,8 @@ public:
      */
     void applyColorToMesh(
         pcl::PolygonMesh& mesh, 
-        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud
+        pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud,
+        const std::vector<PointCloudBuilder::PointWithImageInfo>& pointImageInfo
     );
 
     /**
@@ -54,18 +52,6 @@ public:
 private:
     std::vector<cv::Mat> colorData;
     std::vector<float> angles;
-
-    /**
-     * @brief Görüntünün merkez çizgisinden renk verisini alır
-     * 
-     * @param colorImage Renk görüntüsü
-     * @param imageWidth Görüntü genişliği
-     * @return std::vector<cv::Vec3b> Merkez çizgideki renk değerleri
-     */
-    std::vector<cv::Vec3b> extractCenterLineColors(
-        const cv::Mat& colorImage, 
-        int imageWidth
-    );
 
     /**
      * @brief Mesh noktasının açısını hesaplar

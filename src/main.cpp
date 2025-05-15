@@ -200,6 +200,9 @@ int main(int argc, char** argv) {
     // Optimum mesh kalitesi için 7 derinlik kullan (bardak gibi nesneler için)
     MeshCreator meshCreator(7);
     
+    // Set aggressive smoothing parameters
+    meshCreator.setSmoothingParameters(100, 0.0005f);
+    
     ColorMapper colorMapper;
     OBJExporter objExporter;
     
@@ -273,7 +276,12 @@ int main(int argc, char** argv) {
         std::vector<cv::Point> laserLine = laserDetector.detectLaserLine(laserImage);
         
         // Nokta bulutuna ekle
+        size_t prevSize = pointCloudBuilder.pointImageInfo.size();
         pointCloudBuilder.addLineToCloud(laserLine, angle, imageWidth, imageHeight);
+        size_t newSize = pointCloudBuilder.pointImageInfo.size();
+        for (size_t idx = prevSize; idx < newSize; ++idx) {
+            pointCloudBuilder.pointImageInfo[idx].imageIndex = i;
+        }
     }
     
     std::cout << "\n1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Tamamlandı" << std::endl;
@@ -285,11 +293,35 @@ int main(int argc, char** argv) {
     // Adım 2: Renk bilgisini işle
     std::cout << "2. Aşama: Renk bilgisi işleniyor - Başladı" << std::endl;
     
+    // Store detected laser lines to pass to color mapper
+    std::vector<std::vector<cv::Point>> allLaserLines(totalImages);
+
+    // First pass to get all laser lines (re-use existing loop if possible or adapt)
+    // This assumes laserFiles and totalImages are already defined and populated
+    // We need to ensure laserDetector settings are appropriate for this pass as well
+    // For simplicity, I am re-running the laser detection part here.
+    // In a more optimized version, you would store laserLines from the first loop.
+
+    std::cout << "Lazer çizgileri renk eşlemesi için yeniden tespit ediliyor..." << std::endl;
+    for (int i = 0; i < totalImages; i++) {
+        cv::Mat laserImage = cv::imread(laserFiles[i]);
+        if (laserImage.empty()) {
+            // Error handling as in the original loop
+            std::cerr << "\nHata: Lazer görüntüsü yüklenemedi (renk eşlemesi için): " << laserFiles[i] << std::endl;
+            allLaserLines[i] = {}; // Store empty line
+            continue;
+        }
+        // Ensure laserDetector is in a non-debug state for this pass if it was changed before
+        laserDetector.setDebugMode(false); // Or based on args.debugMode if you want to see it
+        allLaserLines[i] = laserDetector.detectLaserLine(laserImage);
+    }
+    std::cout << "Lazer çizgileri renk eşlemesi için tespit edildi." << std::endl;
+
     for (int i = 0; i < totalImages; i++) {
         // İlerleme göster
         if (i % 10 == 0) {
             std::cout << "İşlenen renk görüntüsü: " << i << "/" << totalImages << " (" 
-                     << (i * 100 / totalImages) << "%)\r" << std::flush;
+                     << (i * 100 / totalImages) << "% )\r" << std::flush;
         }
         
         // Renkli görüntüyü yükle
@@ -304,7 +336,7 @@ int main(int argc, char** argv) {
         float angle = (float)i / totalImages * 360.0f;
         
         // Renk bilgisini ekle
-        colorMapper.addColorData(colorImage, angle, imageWidth, imageHeight);
+        colorMapper.addColorData(colorImage, angle);
     }
     
     std::cout << "\n2. Aşama: Renk bilgisi işleniyor - Tamamlandı" << std::endl;
@@ -321,6 +353,7 @@ int main(int argc, char** argv) {
     }
     
     // Nokta bulutundan mesh oluştur
+    meshCreator.setSmoothingParameters(100, 0.0005f); // 100 iterations, strong smoothing
     pcl::PolygonMesh mesh = meshCreator.createMesh(cloud);
 
     if (mesh.polygons.empty()) {
@@ -329,7 +362,7 @@ int main(int argc, char** argv) {
         // Try a different mesh creation approach or parameters
         std::cout << "Alternatif mesh oluşturma yöntemi deneniyor..." << std::endl;
         meshCreator.setDepth(8);  // Adjust depth parameter
-        meshCreator.setSmoothingParameters(0, 0);  // Disable smoothing
+        meshCreator.setSmoothingParameters(100, 0.0005f);  // Disable smoothing
         mesh = meshCreator.createMesh(cloud);
         
         if (mesh.polygons.empty()) {
@@ -345,7 +378,7 @@ int main(int argc, char** argv) {
     std::cout << "4. Aşama: Mesh renklendiriliyor - Başladı" << std::endl;
     
     // Nokta bulutundan renk bilgisini al
-    colorMapper.applyColorToMesh(mesh, cloud);
+    colorMapper.applyColorToMesh(mesh, cloud, pointCloudBuilder.pointImageInfo);
     
     std::cout << "4. Aşama: Mesh renklendiriliyor - Tamamlandı" << std::endl;
     
