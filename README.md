@@ -63,6 +63,9 @@ make -j4
 # Interactive mode ile Digital Image Processing teknikleri kullanımı
 ./bin/3DModelCreator --laser ../scan/laser/ --color ../scan/color/ --output output/model.obj --debug --interactive
 
+
+# Not: 3d-model-creator/src/$ cmake .. && 3d-model-creator/ make -j4   
+
 # Tüm parametrelerle
 ./bin/3DModelCreator --laser /scan/laser/ --color /scan/color/ --output output/model.obj --samples 360 --debug
 ```
