@@ -8,6 +8,8 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/surface/simplification_remove_unused_vertices.h>
 #include <iostream>
+#include <pcl/surface/vtk_smoothing/vtk_utils.h>
+#include <pcl/surface/vtk_smoothing/vtk_mesh_smoothing_laplacian.h>
 
 MeshCreator::MeshCreator(int depth)
     : poissonDepth(depth), smoothingIterations(1), smoothingFactor(0.1f) {
@@ -253,26 +255,26 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
 void MeshCreator::refineMesh(pcl::PolygonMesh& mesh) {
     // Save original mesh in case smoothing fails
     pcl::PolygonMesh originalMesh = mesh;
-    
-    // Extract the mesh vertices
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::fromPCLPointCloud2(mesh.cloud, *cloud);
-    
-    // Apply smoothing with very gentle parameters
-    int iterations = smoothingIterations > 0 ? smoothingIterations : 1;
-    float lambda = smoothingFactor > 0 ? smoothingFactor : 0.1f;
-    
-    // Use PCL's mesh smoothing (implementation depends on your PCL version)
+
+    // Apply Laplacian smoothing using PCL's VTK wrapper
     try {
-        // Your existing smoothing code with reduced parameters
-        
+        pcl::MeshSmoothingLaplacianVTK vtkSmoother;
+        vtkSmoother.setInputMesh(pcl::make_shared<pcl::PolygonMesh>(mesh));
+        vtkSmoother.setNumIter(smoothingIterations > 0 ? smoothingIterations : 10);
+        vtkSmoother.setConvergence(smoothingFactor > 0 ? smoothingFactor : 0.01f);
+        vtkSmoother.setRelaxationFactor(0.01f); // Default, can be parameterized
+        vtkSmoother.setFeatureEdgeSmoothing(false);
+        vtkSmoother.setBoundarySmoothing(true);
+        vtkSmoother.process(mesh);
+
         // Check if smoothing produced a valid mesh
         if (mesh.polygons.empty()) {
             std::cerr << "Uyarı: Düzgünleştirme tüm polygonları kaldırdı! Orijinal mesh kullanılıyor." << std::endl;
             mesh = originalMesh;
+        } else {
+            std::cout << "Laplacian mesh smoothing uygulandı." << std::endl;
         }
-    }
-    catch (const std::exception& e) {
+    } catch (const std::exception& e) {
         std::cerr << "Mesh düzgünleştirme hatası: " << e.what() << std::endl;
         std::cerr << "Orijinal mesh kullanılıyor." << std::endl;
         mesh = originalMesh;
