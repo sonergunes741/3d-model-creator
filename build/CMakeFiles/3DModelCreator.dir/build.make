@@ -208,10 +208,9 @@ bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_viz.so.4.6.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_wechat_qrcode.so.4.6.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_xobjdetect.so.4.6.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_xphoto.so.4.6.0
-bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_io.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_surface.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_features.so
-bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_search.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_visualization.so
 bin/3DModelCreator: /usr/lib/libOpenNI.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libusb-1.0.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libOpenNI2.so
@@ -239,6 +238,13 @@ bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_imgproc.so.4.6.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libopencv_core.so.4.6.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_filters.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_sample_consensus.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_io.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_search.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_octree.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_kdtree.so
+bin/3DModelCreator: /usr/lib/libOpenNI.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libusb-1.0.so
+bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libOpenNI2.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libvtkChartsCore-9.1.so.9.1.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libvtkInteractionImage-9.1.so.9.1.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libvtkIOGeometry-9.1.so.9.1.0
@@ -286,8 +292,6 @@ bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libQt5Core.so.5.15.8
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libvtkCommonCore-9.1.so.9.1.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libtbb.so.12.8
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libvtksys-9.1.so.9.1.0
-bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_octree.so
-bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_kdtree.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libpcl_common.so
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libboost_system.so.1.74.0
 bin/3DModelCreator: /usr/lib/aarch64-linux-gnu/libboost_filesystem.so.1.74.0
