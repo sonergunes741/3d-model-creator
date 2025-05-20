@@ -132,15 +132,15 @@ void PointCloudBuilder::processPointCloud() {
         return;
     }
     
-    // AŞAMA 1: Voxel tabanlı alt örnekleme - daha az agresif
-    pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // AŞAMA 1: Voxel tabanlı alt örnekleme - devre dışı bırakıldı
+    // pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // voxelGrid.setInputCloud(cloud);
+    // voxelGrid.setLeafSize(0.1f, 0.1f, 0.1f);  // 0.1mm voksel boyutu - neredeyse hiç filtreleme yok
+    // voxelGrid.filter(*cloudFiltered);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered = cloud; // Voxel grid disabled, use original
     
-    voxelGrid.setInputCloud(cloud);
-    voxelGrid.setLeafSize(1.0f, 1.0f, 1.0f);  // 1mm voksel boyutu - daha az filtreleme
-    voxelGrid.filter(*cloudFiltered);
-    
-    std::cout << "Voxel filtrelemeden sonra nokta sayısı: " << cloudFiltered->points.size() << std::endl;
+    std::cout << "İşlenmemiş nokta bulutu boyutu: " << cloudFiltered->points.size() << std::endl;
     
     // Çok az nokta kaldıysa, filtrelemeden önceki nokta bulutunu kullan
     if (cloudFiltered->points.size() < 50) {
@@ -148,13 +148,13 @@ void PointCloudBuilder::processPointCloud() {
         return;
     }
     
-    // AŞAMA 2: İstatistiksel aykırı değer temizleme - daha az agresif
+    // AŞAMA 2: İstatistiksel aykırı değer temizleme - minimum filtreleme
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudOutlierRemoved(new pcl::PointCloud<pcl::PointXYZRGB>);
     
     sor.setInputCloud(cloudFiltered);
     sor.setMeanK(50);  // 50 komşu - daha fazla komşu kullan
-    sor.setStddevMulThresh(2.0);  // 2.0 standart sapma - daha az sıkı filtreleme
+    sor.setStddevMulThresh(5.0);  // 5.0 standart sapma - minimum filtreleme
     sor.filter(*cloudOutlierRemoved);
     
     std::cout << "Aykırı değer temizlemeden sonra nokta sayısı: " << cloudOutlierRemoved->points.size() << std::endl;

@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>  // C++17 için
 #include <opencv2/opencv.hpp>
+#include <pcl/io/pcd_io.h>
 
 #include "LaserLineDetector.h"
 #include "PointCloudBuilder.h"
@@ -127,6 +128,9 @@ int main(int argc, char** argv) {
         std::cout << "Toplam " << args.sampleCount << " görüntü işlenecek." << std::endl;
     }
     
+    // Increase sample count for denser point cloud
+    args.sampleCount = std::min(400, (int)std::min(laserFiles.size(), colorFiles.size()));
+    
     // Çıktı klasörünü oluştur
     createOutputDirectory(args.outputPath);
     
@@ -194,14 +198,14 @@ int main(int argc, char** argv) {
     }
     
     PointCloudBuilder pointCloudBuilder;
-    // Bardak için optimal tarama parametreleri
-    pointCloudBuilder.setScanParameters(50.0f, 0.0f, 0.0f, 0.0f);
+    // Adjusted scan parameters for better cup reconstruction
+    pointCloudBuilder.setScanParameters(60.0f, 0.0f, 0.0f, 0.0f);  // Increased radius from 50.0f to 60.0f
     
-    // Optimum mesh kalitesi için 7 derinlik kullan (bardak gibi nesneler için)
-    MeshCreator meshCreator(7);
+    // Optimum mesh kalitesi için 14 derinlik kullan (çok yüksek çözünürlük)
+    MeshCreator meshCreator(14);
     
-    // Set aggressive smoothing parameters
-    meshCreator.setSmoothingParameters(100, 0.0005f);
+    // Set more aggressive smoothing parameters
+    meshCreator.setSmoothingParameters(200, 0.001f);
     
     ColorMapper colorMapper;
     OBJExporter objExporter;
@@ -289,6 +293,10 @@ int main(int argc, char** argv) {
     
     // Nokta bulutunu filtrele ve hazırla
     pointCloudBuilder.processPointCloud();
+
+    // Save the filtered point cloud to a PCD file for later viewing
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filteredCloud = pointCloudBuilder.getCloud();
+    pcl::io::savePCDFileBinary("output/pointcloud.pcd", *filteredCloud);
     
     // Adım 2: Renk bilgisini işle
     std::cout << "2. Aşama: Renk bilgisi işleniyor - Başladı" << std::endl;
@@ -353,7 +361,7 @@ int main(int argc, char** argv) {
     }
     
     // Nokta bulutundan mesh oluştur
-    meshCreator.setSmoothingParameters(100, 0.0005f); // 100 iterations, strong smoothing
+    meshCreator.setSmoothingParameters(200, 0.001f); // 200 iterations, strong smoothing
     pcl::PolygonMesh mesh = meshCreator.createMesh(cloud);
 
     if (mesh.polygons.empty()) {
@@ -387,7 +395,7 @@ int main(int argc, char** argv) {
     
     // Texture boyutunu ayarla (OBJExporter'a texture çözünürlüğü ayarı için method eklenmeli)
     objExporter.setUseVertexColors(true);
-    objExporter.setTextureResolution(2048, 2048);
+    objExporter.setTextureResolution(4096, 4096);
     
     // Mesh'i OBJ olarak dışa aktar
     std::string modelName = fs::path(args.outputPath).stem().string();
