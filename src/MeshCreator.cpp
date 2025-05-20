@@ -76,9 +76,9 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
             tree->setInputCloud(cloudWithNormals);
             
             // Bardak gibi nesneler için optimize edilmiş parametreler
-            gp3.setSearchRadius(10.0);  // Daha büyük arama yarıçapı 
-            gp3.setMu(5.0);  // Daha geniş arama
-            gp3.setMaximumNearestNeighbors(100);  // Daha fazla komşu
+            gp3.setSearchRadius(40.0);  // Çok daha büyük arama yarıçapı
+            gp3.setMu(10.0);  // Çok daha geniş arama
+            gp3.setMaximumNearestNeighbors(300);  // Çok daha fazla komşu
             gp3.setMinimumAngle(M_PI/18);  // 10 derece
             gp3.setMaximumAngle(2*M_PI/2.5);  // ~140 derece
             gp3.setNormalConsistency(false);  // Normal tutarlılığını devre dışı bırak
