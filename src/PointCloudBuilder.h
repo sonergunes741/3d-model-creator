@@ -83,26 +83,19 @@ public:
     /**
      * @brief Tarama parametrelerini ayarlar
      * 
-     * @param radius Tarama mesafesi (mm)
-     * @param centerX Tarama merkezi X (mm)
-     * @param centerY Tarama merkezi Y (mm)
-     * @param centerZ Tarama merkezi Z (mm)
+     * @param radius Tarama yarıçapı
+     * @param centerX Merkez X koordinatı
+     * @param centerY Merkez Y koordinatı
+     * @param centerZ Merkez Z koordinatı
      */
-    void setScanParameters(
-        float radius = 200.0f,
-        float centerX = 0.0f,
-        float centerY = 0.0f,
-        float centerZ = 0.0f
-    );
+    void setScanParameters(float radius, float centerX, float centerY, float centerZ);
 
 private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
     float scanRadius;
-    float scanCenterX;
-    float scanCenterY;
-    float scanCenterZ;
+    float scanCenterX, scanCenterY, scanCenterZ;
 
     /**
      * @brief Görüntü noktasını 3D dünya koordinatlarına dönüştürür

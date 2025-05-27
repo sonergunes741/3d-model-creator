@@ -76,37 +76,30 @@ pcl::PointXYZRGB PointCloudBuilder::projectPointTo3D(
     // Açıyı radyana çevir
     float angleRad = angle * M_PI / 180.0f;
     
-    // Parameters from setScanParameters:
-    // scanRadius: General scaling factor for the object (used for height and radial extent)
-    // scanCenterX, scanCenterY, scanCenterZ: Offsets for the object's center
-
-    // Calculate World Y-coordinate based on image point.y
-    // normalized_image_y: 0 (bottom of image) to 1 (top of image)
-    float normalized_image_y = ((float)imageHeight - point.y) / (float)imageHeight;
-    // y_world ranges from (scanCenterY - scanRadius/2) to (scanCenterY + scanRadius/2)
-    float y_world = scanCenterY + (normalized_image_y * scanRadius) - (scanRadius / 2.0f);
-
-    // Calculate Profile Radius based on image point.x
-    // normalized_image_x: -1 (left edge of image) to 1 (right edge of image)
-    float normalized_image_x = ((float)point.x - imageWidth / 2.0f) / (imageWidth / 2.0f);
+    // Görüntü koordinatlarını normalize et ve merkezi sıfır yap
+    float centerX = imageWidth / 2.0f;  // Görüntü merkezi
+    float centerY = imageHeight / 2.0f;
     
-    // x_local_signed: Horizontal displacement from center, scaled by scanRadius/2.
-    // This represents the point's coordinate in the object's local X-axis before turntable rotation.
-    float x_local_signed = normalized_image_x * (scanRadius / 2.0f);
+    // Merkeze göre normalize edilmiş koordinatlar (-0.5 ile +0.5 arası)
+    float normalizedX = (point.x - centerX) / imageWidth;  // Merkeze göre mesafe
+    float normalizedY = (point.y - centerY) / imageHeight; // Merkeze göre yükseklik
     
-    // The profileRadius is the absolute distance from the rotation axis.
-    float profileRadius = std::abs(x_local_signed);
+    // Silindirik koordinatlara dönüştür
+    float radius = normalizedX * scanRadius;  // Negatif olabilir (merkez çizgisinin sol tarafı)
+    float height = -normalizedY * scanRadius; // Y ekseni ters (görüntüde yukarı = negatif Z)
     
-    // Silindirik koordinatlardan Kartezyen koordinatlara dönüşüm
-    float x_world = scanCenterX + profileRadius * std::cos(angleRad);
-    float z_world = scanCenterZ + profileRadius * std::sin(angleRad);
+    // 3D koordinatları hesapla (silindirik koordinat sistemi)
+    // Y ekseni dikey (yükseklik), X ve Z eksenleri yatay (dairesel hareket)
+    float x = radius * cos(angleRad) + scanCenterX;
+    float y = height + scanCenterY;  // Y ekseni dikey (yükseklik)
+    float z = radius * sin(angleRad) + scanCenterZ;  // Z ekseni yatay
     
-    // PCL nokta oluştur
+    // PCL noktası oluştur
     pcl::PointXYZRGB p3d;
-    p3d.x = x_world;
-    p3d.y = y_world;
-    p3d.z = z_world;
-    p3d.r = 255; // Default color, will be overwritten by ColorMapper
+    p3d.x = x;
+    p3d.y = y;
+    p3d.z = z;
+    p3d.r = 255; // Varsayılan renk, ColorMapper tarafından değiştirilecek
     p3d.g = 255;
     p3d.b = 255;
     
@@ -132,15 +125,15 @@ void PointCloudBuilder::processPointCloud() {
         return;
     }
     
-    // AŞAMA 1: Voxel tabanlı alt örnekleme - daha az agresif
-    pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // AŞAMA 1: Voxel tabanlı alt örnekleme - devre dışı bırakıldı
+    // pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
+    // pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    // voxelGrid.setInputCloud(cloud);
+    // voxelGrid.setLeafSize(0.1f, 0.1f, 0.1f);  // 0.1mm voksel boyutu - neredeyse hiç filtreleme yok
+    // voxelGrid.filter(*cloudFiltered);
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered = cloud; // Voxel grid disabled, use original
     
-    voxelGrid.setInputCloud(cloud);
-    voxelGrid.setLeafSize(1.0f, 1.0f, 1.0f);  // 1mm voksel boyutu - daha az filtreleme
-    voxelGrid.filter(*cloudFiltered);
-    
-    std::cout << "Voxel filtrelemeden sonra nokta sayısı: " << cloudFiltered->points.size() << std::endl;
+    std::cout << "İşlenmemiş nokta bulutu boyutu: " << cloudFiltered->points.size() << std::endl;
     
     // Çok az nokta kaldıysa, filtrelemeden önceki nokta bulutunu kullan
     if (cloudFiltered->points.size() < 50) {
@@ -148,13 +141,13 @@ void PointCloudBuilder::processPointCloud() {
         return;
     }
     
-    // AŞAMA 2: İstatistiksel aykırı değer temizleme - daha az agresif
+    // AŞAMA 2: İstatistiksel aykırı değer temizleme - minimum filtreleme
     pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudOutlierRemoved(new pcl::PointCloud<pcl::PointXYZRGB>);
     
     sor.setInputCloud(cloudFiltered);
     sor.setMeanK(50);  // 50 komşu - daha fazla komşu kullan
-    sor.setStddevMulThresh(2.0);  // 2.0 standart sapma - daha az sıkı filtreleme
+    sor.setStddevMulThresh(5.0);  // 5.0 standart sapma - minimum filtreleme
     sor.filter(*cloudOutlierRemoved);
     
     std::cout << "Aykırı değer temizlemeden sonra nokta sayısı: " << cloudOutlierRemoved->points.size() << std::endl;

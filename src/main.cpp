@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>  // C++17 için
 #include <opencv2/opencv.hpp>
+#include <pcl/io/pcd_io.h>
 
 #include "LaserLineDetector.h"
 #include "PointCloudBuilder.h"
@@ -127,6 +128,9 @@ int main(int argc, char** argv) {
         std::cout << "Toplam " << args.sampleCount << " görüntü işlenecek." << std::endl;
     }
     
+    // Use the actual number of available images
+    args.sampleCount = std::min(laserFiles.size(), colorFiles.size());
+    
     // Çıktı klasörünü oluştur
     createOutputDirectory(args.outputPath);
     
@@ -135,9 +139,9 @@ int main(int argc, char** argv) {
     
     // Lazer rengi ayarla - bardağın yüzeyindeki lazer çizgisi için uygun değerler
     laserDetector.setThresholds(cv::Scalar(120, 20, 100), cv::Scalar(179, 255, 255));
-    
+
     // Kontrast ve keskinlik ayarla
-    laserDetector.setContrastEnhancement(2.5, 0);  // Daha güçlü kontrast
+    laserDetector.setContrastEnhancement(3.5, 0);  // Daha güçlü kontrast
     
     // Blurlama ayarla
     laserDetector.setMedianBlur(5);  // 5x5 median blur
@@ -150,58 +154,19 @@ int main(int argc, char** argv) {
     // Debug modunu ayarla
     laserDetector.setDebugMode(args.debugMode);
     
-    // ROI ayarla (eğer belirtildiyse)
-    if (args.useROI) {
-        laserDetector.setROI(args.roiX, args.roiY, args.roiWidth, args.roiHeight);
-        std::cout << "ROI etkinleştirildi: x=" << args.roiX << ", y=" << args.roiY 
-                 << ", genişlik=" << args.roiWidth << ", yükseklik=" << args.roiHeight << std::endl;
-    }
-    
-    // İnteraktif mod kontrolü
-    if (args.interactiveMode) {
-        std::cout << "İnteraktif lazer tespiti modu başlatılıyor..." << std::endl;
-        
-        if (laserFiles.empty()) {
-            std::cerr << "İnteraktif mod için görüntü bulunamadı!" << std::endl;
-            return 1;
-        }
-        
-        // İlk görüntüyü yükle
-        cv::Mat firstImage = cv::imread(laserFiles[0]);
-        
-        if (firstImage.empty()) {
-            std::cerr << "İlk lazer görüntüsü yüklenemedi: " << laserFiles[0] << std::endl;
-            return 1;
-        }
-        
-        // İnteraktif lazer optimizasyonu yap
-        bool optimizationSuccess = laserDetector.optimizeROIAndDetectLaser(firstImage);
-        
-        if (!optimizationSuccess) {
-            std::cout << "İnteraktif mod iptal edildi. Çıkılıyor..." << std::endl;
-            return 0;
-        }
-        
-        // Kullanıcıya devam etmek isteyip istemediğini sor
-        std::cout << "Taramaya devam etmek istiyor musunuz? (e/h): ";
-        char response;
-        std::cin >> response;
-        
-        if (response != 'e' && response != 'E') {
-            std::cout << "İşlem kullanıcı tarafından sonlandırıldı." << std::endl;
-            return 0;
-        }
-    }
+    // ROI ayarla (her zaman sabit ROI kullan)
+    laserDetector.setROI(854, 1106, 621, 621);
+    std::cout << "Sabit ROI kullanılıyor: x=854, y=1106, genişlik=621, yükseklik=700" << std::endl;
     
     PointCloudBuilder pointCloudBuilder;
-    // Bardak için optimal tarama parametreleri
-    pointCloudBuilder.setScanParameters(50.0f, 0.0f, 0.0f, 0.0f);
+    // Adjusted scan parameters for better cup reconstruction
+    pointCloudBuilder.setScanParameters(60.0f, 0.0f, 0.0f, 0.0f);  // Increased radius from 50.0f to 60.0f
     
-    // Optimum mesh kalitesi için 7 derinlik kullan (bardak gibi nesneler için)
-    MeshCreator meshCreator(7);
+    // Optimum mesh kalitesi için 14 derinlik kullan (çok yüksek çözünürlük)
+    MeshCreator meshCreator(14);
     
-    // Set aggressive smoothing parameters
-    meshCreator.setSmoothingParameters(100, 0.0005f);
+    // Set more aggressive smoothing parameters
+    meshCreator.setSmoothingParameters(200, 0.001f);
     
     ColorMapper colorMapper;
     OBJExporter objExporter;
@@ -235,30 +200,6 @@ int main(int argc, char** argv) {
         if (i == 0) {
             imageWidth = laserImage.cols;
             imageHeight = laserImage.rows;
-            
-            // ROI belirtilmediyse ve debug modu açıksa, kullanıcıdan ROI seçmesini iste
-            if (args.debugMode && !args.useROI && !args.interactiveMode) {
-                std::cout << "İlgi alanı (ROI) seçmek ister misiniz? (e/h): ";
-                char response;
-                std::cin >> response;
-                
-                if (response == 'e' || response == 'E') {
-                    // Debug penceresi oluştur ve ROI seçimine hazırla
-                    cv::Mat firstImage = laserImage.clone();
-                    cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
-                    cv::resizeWindow("Select ROI", 640, 480);
-                    
-                    std::cout << "Lütfen lazer çizgisini içeren bölgeyi seçin (fareyle dikdörtgen çizin)." << std::endl;
-                    cv::Rect selectedROI = cv::selectROI("Select ROI", firstImage, false, false);
-                    
-                    // ROI'yi ayarla
-                    laserDetector.setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
-                    std::cout << "ROI seçildi: x=" << selectedROI.x << ", y=" << selectedROI.y 
-                             << ", genişlik=" << selectedROI.width << ", yükseklik=" << selectedROI.height << std::endl;
-                    
-                    cv::destroyWindow("Select ROI");
-                }
-            }
         }
         
         // Belirli görüntüler için debug modu etkinleştir
@@ -289,6 +230,10 @@ int main(int argc, char** argv) {
     
     // Nokta bulutunu filtrele ve hazırla
     pointCloudBuilder.processPointCloud();
+
+    // Save the filtered point cloud to a PCD file for later viewing
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filteredCloud = pointCloudBuilder.getCloud();
+    pcl::io::savePCDFileBinary("output/pointcloud.pcd", *filteredCloud);
     
     // Adım 2: Renk bilgisini işle
     std::cout << "2. Aşama: Renk bilgisi işleniyor - Başladı" << std::endl;
@@ -353,7 +298,7 @@ int main(int argc, char** argv) {
     }
     
     // Nokta bulutundan mesh oluştur
-    meshCreator.setSmoothingParameters(100, 0.0005f); // 100 iterations, strong smoothing
+    meshCreator.setSmoothingParameters(200, 0.001f); // 200 iterations, strong smoothing
     pcl::PolygonMesh mesh = meshCreator.createMesh(cloud);
 
     if (mesh.polygons.empty()) {
@@ -387,7 +332,7 @@ int main(int argc, char** argv) {
     
     // Texture boyutunu ayarla (OBJExporter'a texture çözünürlüğü ayarı için method eklenmeli)
     objExporter.setUseVertexColors(true);
-    objExporter.setTextureResolution(2048, 2048);
+    objExporter.setTextureResolution(4096, 4096);
     
     // Mesh'i OBJ olarak dışa aktar
     std::string modelName = fs::path(args.outputPath).stem().string();
