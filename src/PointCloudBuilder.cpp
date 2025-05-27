@@ -15,6 +15,10 @@ PointCloudBuilder::PointCloudBuilder() {
     scanCenterX = 0.0f;
     scanCenterY = 0.0f;
     scanCenterZ = 0.0f;
+    
+    // Scanner approach parameters
+    rotationCenterX = 0;
+    useCustomRotationCenter = false;
 }
 
 // Constructor with camera parameters
@@ -24,7 +28,9 @@ PointCloudBuilder::PointCloudBuilder(const cv::Mat& cameraMatrix, const cv::Mat&
       scanRadius(50.0f), // Bardak için daha küçük bir yarıçap
       scanCenterX(0.0f), 
       scanCenterY(0.0f), 
-      scanCenterZ(0.0f) {
+      scanCenterZ(0.0f),
+      rotationCenterX(0),
+      useCustomRotationCenter(false) {
     // Yeni boş nokta bulutu oluştur
     cloud.reset(new pcl::PointCloud<pcl::PointXYZRGB>());
 }
@@ -73,35 +79,36 @@ pcl::PointXYZRGB PointCloudBuilder::projectPointTo3D(
     int imageWidth, 
     int imageHeight) {
     
-    // Açıyı radyana çevir
+    // Convert angle to radians
     float angleRad = angle * M_PI / 180.0f;
     
-    // Parameters from setScanParameters:
-    // scanRadius: General scaling factor for the object (used for height and radial extent)
-    // scanCenterX, scanCenterY, scanCenterZ: Offsets for the object's center
-
-    // Calculate World Y-coordinate based on image point.y
-    // normalized_image_y: 0 (bottom of image) to 1 (top of image)
-    float normalized_image_y = ((float)imageHeight - point.y) / (float)imageHeight;
-    // y_world ranges from (scanCenterY - scanRadius/2) to (scanCenterY + scanRadius/2)
-    float y_world = scanCenterY + (normalized_image_y * scanRadius) - (scanRadius / 2.0f);
-
-    // Calculate Profile Radius based on image point.x
-    // normalized_image_x: -1 (left edge of image) to 1 (right edge of image)
-    float normalized_image_x = ((float)point.x - imageWidth / 2.0f) / (imageWidth / 2.0f);
+    // Scanner approach: Use cylindrical coordinates with proper height and distance calculation
+    // This is more accurate than the previous approach
     
-    // x_local_signed: Horizontal displacement from center, scaled by scanRadius/2.
-    // This represents the point's coordinate in the object's local X-axis before turntable rotation.
-    float x_local_signed = normalized_image_x * (scanRadius / 2.0f);
+    // Calculate height (H) - relative to bottom of image
+    // In scanner, bottomR represents the bottom reference point
+    // For simplicity, we'll use the bottom of the image as reference
+    int bottomR = imageHeight - 1;  // Bottom of image
+    double H = point.y - bottomR;   // Height relative to bottom (negative values = above bottom)
     
-    // The profileRadius is the absolute distance from the rotation axis.
-    float profileRadius = std::abs(x_local_signed);
+    // Calculate distance from rotation center
+    // In scanner, centerC is determined from the first image's laser line
+    // For now, we'll use a reasonable estimate or make it configurable
+    int centerC = useCustomRotationCenter ? rotationCenterX : imageWidth / 2;  // Use custom center if available
+    double dist = point.x - centerC;  // Distance from center (can be negative)
     
-    // Silindirik koordinatlardan Kartezyen koordinatlara dönüşüm
-    float x_world = scanCenterX + profileRadius * std::cos(angleRad);
-    float z_world = scanCenterZ + profileRadius * std::sin(angleRad);
+    // Convert to cylindrical coordinates using scanner's getVertex function logic
+    // Scanner's getVertex: x = d * cos(t), y = d * sin(t), z = H
+    double x = dist * std::cos(angleRad);
+    double y = dist * std::sin(angleRad);
+    double z = H;
     
-    // PCL nokta oluştur
+    // Apply scaling and centering based on scan parameters
+    float x_world = scanCenterX + x * (scanRadius / 100.0f);  // Scale by radius
+    float y_world = scanCenterY + y * (scanRadius / 100.0f);
+    float z_world = scanCenterZ + z * (scanRadius / 100.0f);
+    
+    // Create PCL point
     pcl::PointXYZRGB p3d;
     p3d.x = x_world;
     p3d.y = y_world;
@@ -188,4 +195,85 @@ void PointCloudBuilder::setScanParameters(float radius, float centerX, float cen
     scanCenterX = centerX;
     scanCenterY = centerY;
     scanCenterZ = centerZ;
+}
+
+void PointCloudBuilder::setRotationCenterX(int centerX) {
+    rotationCenterX = centerX;
+    useCustomRotationCenter = true;
+}
+
+void PointCloudBuilder::determineRotationCenterFromFirstImage(const std::vector<cv::Point>& laserLine, int imageWidth) {
+    if (laserLine.empty()) {
+        // Fallback to image center
+        rotationCenterX = imageWidth / 2;
+        useCustomRotationCenter = true;
+        return;
+    }
+    
+    // Scanner approach: Find the rightmost point and add offset
+    int maxX = 0;
+    for (const auto& point : laserLine) {
+        if (point.x > maxX) {
+            maxX = point.x;
+        }
+    }
+    
+    // Add offset like in scanner (centerC = cIndex + 40)
+    rotationCenterX = maxX + 40;
+    
+    // Ensure it's within image bounds
+    if (rotationCenterX >= imageWidth) {
+        rotationCenterX = imageWidth - 1;
+    }
+    
+    useCustomRotationCenter = true;
+    
+    std::cout << "Rotasyon merkezi belirlendi: " << rotationCenterX << std::endl;
+}
+
+void PointCloudBuilder::applyScannerStyleFiltering(int verticalPrecision) {
+    if (!cloud || cloud->empty()) {
+        std::cout << "UYARI: Nokta bulutu boş, filtreleme yapılamıyor!" << std::endl;
+        return;
+    }
+    
+    if (verticalPrecision >= 100) {
+        std::cout << "Dikey hassasiyet %100, filtreleme yapılmıyor." << std::endl;
+        return;
+    }
+    
+    std::cout << "Scanner yaklaşımı ile nokta filtreleme uygulanıyor..." << std::endl;
+    std::cout << "Filtreleme öncesi nokta sayısı: " << cloud->points.size() << std::endl;
+    
+    // Calculate how many points to keep based on vertical precision
+    int itemsToKeep = static_cast<int>(cloud->points.size() * (verticalPrecision / 100.0));
+    itemsToKeep = std::max(itemsToKeep, 1);  // At least keep 1 point
+    
+    if (itemsToKeep >= cloud->points.size()) {
+        std::cout << "Filtreleme gerekmiyor, tüm noktalar korunuyor." << std::endl;
+        return;
+    }
+    
+    // Calculate step size for uniform sampling
+    double stepSize = static_cast<double>(cloud->points.size()) / itemsToKeep;
+    
+    // Create new filtered point cloud
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filteredCloud(new pcl::PointCloud<pcl::PointXYZRGB>());
+    filteredCloud->reserve(itemsToKeep);
+    
+    // Sample points uniformly
+    for (double i = 0; i < cloud->points.size(); i += stepSize) {
+        int index = static_cast<int>(i);
+        if (index < cloud->points.size()) {
+            filteredCloud->points.push_back(cloud->points[index]);
+        }
+    }
+    
+    // Update the cloud
+    *cloud = *filteredCloud;
+    cloud->width = cloud->points.size();
+    cloud->height = 1;
+    cloud->is_dense = false;
+    
+    std::cout << "Filtreleme sonrası nokta sayısı: " << cloud->points.size() << std::endl;
 }
