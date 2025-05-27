@@ -24,9 +24,78 @@ LaserLineDetector::LaserLineDetector(const cv::Scalar& lowerThresh, const cv::Sc
       dilationKernelSize(3) {
 }
 
-std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) {
-    // Şimdi her satırda mutlaka bir lazer noktası al, bardak profilini daha iyi yakalamak için
+// Helper function to interpolate between points to fill gaps
+std::vector<cv::Point> interpolatePoints(const std::vector<cv::Point>& points, int maxGapSize = 50) {
+    if (points.size() < 2) return points;
     
+    std::vector<cv::Point> interpolated;
+    interpolated.reserve(points.size() * 2); // Reserve space for interpolated points
+    
+    // Add first point
+    interpolated.push_back(points[0]);
+    
+    // Interpolate between consecutive points
+    for (size_t i = 1; i < points.size(); i++) {
+        const cv::Point& prev = points[i-1];
+        const cv::Point& curr = points[i];
+        
+        // If gap is too large, interpolate
+        int yGap = curr.y - prev.y;
+        if (yGap > 1 && yGap <= maxGapSize) {
+            // Linear interpolation
+            for (int y = prev.y + 1; y < curr.y; y++) {
+                float t = static_cast<float>(y - prev.y) / yGap;
+                int x = static_cast<int>(prev.x + t * (curr.x - prev.x));
+                interpolated.push_back(cv::Point(x, y));
+            }
+        }
+        
+        interpolated.push_back(curr);
+    }
+    
+    return interpolated;
+}
+
+// Helper function to fit a quadratic curve to points
+std::vector<float> fitQuadraticCurve(const std::vector<cv::Point>& points) {
+    if (points.size() < 3) return {0, 0, 0}; // Not enough points for quadratic fit
+    
+    // Normalize y coordinates to avoid numerical issues
+    float yMin = points.front().y;
+    float yMax = points.back().y;
+    float yRange = yMax - yMin;
+    
+    // Build the system of equations
+    cv::Mat A(points.size(), 3, CV_32F);
+    cv::Mat b(points.size(), 1, CV_32F);
+    
+    for (size_t i = 0; i < points.size(); i++) {
+        float y = (points[i].y - yMin) / yRange; // Normalized y
+        A.at<float>(i, 0) = y * y;
+        A.at<float>(i, 1) = y;
+        A.at<float>(i, 2) = 1;
+        b.at<float>(i, 0) = points[i].x;
+    }
+    
+    // Solve the system using least squares
+    cv::Mat x;
+    cv::solve(A, b, x, cv::DECOMP_SVD);
+    
+    // Convert coefficients back to original scale
+    std::vector<float> coeffs(3);
+    coeffs[0] = x.at<float>(0, 0) / (yRange * yRange);
+    coeffs[1] = x.at<float>(1, 0) / yRange - 2 * yMin * coeffs[0];
+    coeffs[2] = x.at<float>(2, 0) - yMin * yMin * coeffs[0] - yMin * coeffs[1];
+    
+    return coeffs;
+}
+
+// Helper function to evaluate quadratic curve
+float evaluateQuadratic(const std::vector<float>& coeffs, float y) {
+    return coeffs[0] * y * y + coeffs[1] * y + coeffs[2];
+}
+
+std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) {
     // İlgi bölgesi (ROI) kullanılıyorsa görüntüyü kırp
     cv::Mat workingImage;
     if (roiEnabled) {
@@ -60,39 +129,53 @@ std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) 
         processedImage = workingImage.clone();
     }
     
-    // Bardağı daha iyi tespit için: Kırmızı kanalı güçlendir
-    cv::Mat channels[3];
-    cv::split(processedImage, channels);
-    channels[2] = channels[2] * 1.8; // Kırmızı kanalı daha da güçlendir
-    cv::merge(channels, 3, processedImage);
+    // Scanner approach: Find maximum red value per row (more robust than HSV thresholding)
+    std::vector<cv::Point> laserPoints;
+    int h = processedImage.rows;
+    int w = processedImage.cols;
     
-    // Görüntü yumuşatma - Median blur (tuz & biber gürültüyü giderir)
-    if (useMedianBlur) {
-        cv::medianBlur(processedImage, processedImage, medianKernelSize);
+    // Create a binary mask for detected laser points
+    cv::Mat laserMask = cv::Mat::zeros(h, w, CV_8U);
+    
+    // For each row, find the pixel with maximum red value
+    for(int i = 0; i < h; i++) {
+        int maxRed = -1;
+        int maxRedIndex = -1;
+        
+        for(int j = 0; j < w; j++) {
+            // Get red channel value (BGR format, so red is index 2)
+            int redValue = processedImage.at<cv::Vec3b>(i, j)[2];
+            if(redValue > maxRed) {
+                maxRedIndex = j;
+                maxRed = redValue;
+            }
+        }
+        
+        // If the maximum red value is above threshold, mark it as laser point
+        if(maxRed > 25 && maxRedIndex >= 0) {  // Threshold of 25 (adjustable)
+            laserMask.at<uchar>(i, maxRedIndex) = 255;
+            laserPoints.push_back(cv::Point(maxRedIndex, i));
+        }
     }
     
-    // Görüntü yumuşatma - Gaussian blur (genel gürültüyü giderir)
-    if (useGaussianBlur) {
-        cv::GaussianBlur(processedImage, processedImage, 
+    // Apply additional filtering if needed
+    if (useMedianBlur && medianKernelSize > 0) {
+        cv::medianBlur(laserMask, laserMask, medianKernelSize);
+    }
+    
+    if (useGaussianBlur && gaussianKernelSize > 0) {
+        cv::GaussianBlur(laserMask, laserMask, 
                         cv::Size(gaussianKernelSize, gaussianKernelSize), 
                         gaussianSigma);
     }
     
-    // HSV formatına dönüştür
-    cv::Mat hsvImage;
-    cv::cvtColor(processedImage, hsvImage, cv::COLOR_BGR2HSV);
-
-    // Kırmızı renk aralığında eşikleme yap - daha geniş aralık kullan
-    cv::Mat mask;
-    cv::inRange(hsvImage, lowerThreshold, upperThreshold, mask);
-
     // Morfolojik işlemler - Erosion
     if (useErosion) {
         cv::Mat erosionKernel = cv::getStructuringElement(
             cv::MORPH_ELLIPSE, 
             cv::Size(erosionKernelSize, erosionKernelSize)
         );
-        cv::erode(mask, mask, erosionKernel, cv::Point(-1, -1), erosionIterations);
+        cv::erode(laserMask, laserMask, erosionKernel, cv::Point(-1, -1), erosionIterations);
     }
     
     // Morfolojik işlemler - Dilation
@@ -101,67 +184,50 @@ std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) 
             cv::MORPH_ELLIPSE, 
             cv::Size(dilationKernelSize, dilationKernelSize)
         );
-        cv::dilate(mask, mask, dilationKernel, cv::Point(-1, -1), dilationIterations);
+        cv::dilate(laserMask, laserMask, dilationKernel, cv::Point(-1, -1), dilationIterations);
     }
-
-    // Morfolojik işlemlerle gürültü temizle
-    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(5, 5));
-    cv::morphologyEx(mask, mask, cv::MORPH_OPEN, kernel);
-    cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
-
-    // Bardak kenarlarını daha iyi tespit için: Her satırda en parlak noktayı bul
-    std::vector<cv::Point> laserPoints;
     
-    // İlk olarak tüm beyaz pikselleri bul
-    for (int y = 0; y < mask.rows; y++) {
-        int maxValue = 0;
-        int maxX = -1;
-        
-        // Her satırda en parlak kırmızı pikseli bul
-        for (int x = 0; x < mask.cols; x++) {
-            if (mask.at<uchar>(y, x) > 0) {
-                // Orijinal görüntüde bu noktanın kırmızı değerini kontrol et
-                cv::Vec3b pixelColor = processedImage.at<cv::Vec3b>(y, x);
-                int redValue = pixelColor[2];
-                
-                if (redValue > maxValue) {
-                    maxValue = redValue;
-                    maxX = x;
-                }
+    // Re-extract points from processed mask
+    laserPoints.clear();
+    for(int y = 0; y < laserMask.rows; y++) {
+        for(int x = 0; x < laserMask.cols; x++) {
+            if(laserMask.at<uchar>(y, x) > 0) {
+                laserPoints.push_back(cv::Point(x, y));
             }
         }
-        
-        // Eğer bu satırda kırmızı bir piksel bulunduysa, lazer çizgisine ekle
-        if (maxX >= 0) {
-            laserPoints.push_back(cv::Point(maxX, y));
-        }
     }
     
-    // Eğer çok az nokta bulunursa (bardak bulunamadıysa), ortalama bir çizgi oluştur
-    if (laserPoints.size() < mask.rows * 0.2) {  // Satırların %20'sinden az nokta
+    // Sort points by y-coordinate for better interpolation
+    std::sort(laserPoints.begin(), laserPoints.end(), 
+              [](const cv::Point& a, const cv::Point& b) { return a.y < b.y; });
+    
+    // Fill gaps using interpolation (from original code)
+    laserPoints = interpolatePoints(laserPoints, 20);
+    
+    // If very few points found, create artificial line (fallback)
+    if (laserPoints.size() < h * 0.1) {  // Less than 10% of rows
         std::cout << "UYARI: Çok az lazer noktası tespit edildi! Yapay nokta oluşturuluyor." << std::endl;
         
-        // Bulunan noktaların ortalamasını al
-        int avgX = 0;
+        // Calculate average x position from found points
+        int avgX = w / 2;  // Default to center
         if (!laserPoints.empty()) {
+            int sumX = 0;
             for (const auto& p : laserPoints) {
-                avgX += p.x;
+                sumX += p.x;
             }
-            avgX /= laserPoints.size();
-        } else {
-            avgX = mask.cols / 2;  // Görüntünün ortası
+            avgX = sumX / laserPoints.size();
         }
         
-        // Her satır için bir nokta oluştur
+        // Create points for every row
         laserPoints.clear();
-        for (int y = 0; y < mask.rows; y++) {
+        for (int y = 0; y < h; y++) {
             laserPoints.push_back(cv::Point(avgX, y));
         }
     }
-
-    // Debug modunda görselleştir - tek pencerede
+    
+    // Debug visualization
     if (debugMode) {
-        // Tespit edilen lazer çizgisini çiz
+        // Draw detected laser line
         for (const auto& point : laserPoints) {
             cv::Point adjustedPoint = point;
             if (roiEnabled) {
@@ -171,15 +237,15 @@ std::vector<cv::Point> LaserLineDetector::detectLaserLine(const cv::Mat& image) 
             cv::circle(debugResult, adjustedPoint, 2, cv::Scalar(0, 255, 0), -1);
         }
         
-        // Tüm bilgiler tek pencerede
-        std::string windowName = "Laser Detection";
+        // Show result
+        std::string windowName = "Scanner-Style Laser Detection";
         cv::namedWindow(windowName, cv::WINDOW_NORMAL);
         cv::resizeWindow(windowName, 800, 600);
         cv::imshow(windowName, debugResult);
         cv::waitKey(1);
     }
     
-    // Eğer ROI kullanıldıysa, koordinatları orijinal görüntüye göre düzelt
+    // Adjust coordinates back to original image if ROI was used
     if (roiEnabled && !laserPoints.empty()) {
         for (auto& point : laserPoints) {
             point.x += roiX;

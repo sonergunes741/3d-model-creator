@@ -83,26 +83,43 @@ public:
     /**
      * @brief Tarama parametrelerini ayarlar
      * 
-     * @param radius Tarama mesafesi (mm)
-     * @param centerX Tarama merkezi X (mm)
-     * @param centerY Tarama merkezi Y (mm)
-     * @param centerZ Tarama merkezi Z (mm)
+     * @param radius Tarama yarıçapı
+     * @param centerX Merkez X koordinatı
+     * @param centerY Merkez Y koordinatı
+     * @param centerZ Merkez Z koordinatı
      */
-    void setScanParameters(
-        float radius = 200.0f,
-        float centerX = 0.0f,
-        float centerY = 0.0f,
-        float centerZ = 0.0f
-    );
+    void setScanParameters(float radius, float centerX, float centerY, float centerZ);
+    
+    /**
+     * @brief Rotasyon merkezi X koordinatını ayarlar (scanner yaklaşımı)
+     * 
+     * @param centerX Rotasyon merkezi X koordinatı (piksel cinsinden)
+     */
+    void setRotationCenterX(int centerX);
+    
+    /**
+     * @brief İlk görüntüden rotasyon merkezini otomatik belirler (scanner yaklaşımı)
+     * 
+     * @param laserLine İlk görüntüdeki lazer çizgisi noktaları
+     * @param imageWidth Görüntü genişliği
+     */
+    void determineRotationCenterFromFirstImage(const std::vector<cv::Point>& laserLine, int imageWidth);
+
+    /**
+     * @brief Scanner yaklaşımı ile nokta filtreleme (dikey hassasiyet kontrolü)
+     * 
+     * @param verticalPrecision Dikey hassasiyet yüzdesi (0-100)
+     */
+    void applyScannerStyleFiltering(int verticalPrecision = 100);
 
 private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
     cv::Mat cameraMatrix;
     cv::Mat distCoeffs;
     float scanRadius;
-    float scanCenterX;
-    float scanCenterY;
-    float scanCenterZ;
+    float scanCenterX, scanCenterY, scanCenterZ;
+    int rotationCenterX;
+    bool useCustomRotationCenter;
 
     /**
      * @brief Görüntü noktasını 3D dünya koordinatlarına dönüştürür

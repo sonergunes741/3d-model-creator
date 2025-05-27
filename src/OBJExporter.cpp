@@ -52,7 +52,7 @@ bool OBJExporter::exportMesh(const pcl::PolygonMesh& mesh, const std::string& ou
     std::string textureFilePath = basePath + ".png";
 
     // MTL dosyasını oluştur
-    bool mtlSuccess = writeMTLFile(mtlFilePath, modelName + "_material", textureFileName + ".png");
+    bool mtlSuccess = writeMTLFile(mtlFilePath, modelName + "_material", textureFileName);
     if (!mtlSuccess) {
         std::cerr << "MTL dosyası oluşturma hatası!" << std::endl;
         return false;
@@ -177,13 +177,13 @@ bool OBJExporter::writeMTLFile(
     // MTL içeriği
     mtlFile << "# MTL file created by 3D Model Creator" << std::endl;
     mtlFile << "newmtl " << materialName << std::endl;
-    mtlFile << "Ka 1.000 1.000 1.000" << std::endl;  // Ambient
-    mtlFile << "Kd 1.000 1.000 1.000" << std::endl;  // Diffuse
-    mtlFile << "Ks 0.000 0.000 0.000" << std::endl;  // Specular
-    mtlFile << "Ns 10.0" << std::endl;                // Specular exponent
+    mtlFile << "Ka 0.200 0.200 0.200" << std::endl;  // Ambient - reduced for better lighting
+    mtlFile << "Kd 0.800 0.800 0.800" << std::endl;  // Diffuse - main color from texture
+    mtlFile << "Ks 0.100 0.100 0.100" << std::endl;  // Specular - slight reflection
+    mtlFile << "Ns 32.0" << std::endl;                // Specular exponent - moderate shininess
     mtlFile << "d 1.0" << std::endl;                  // Opacity
     mtlFile << "illum 2" << std::endl;                // Illumination model
-    mtlFile << "map_Kd " << textureFileName << ".png" << std::endl;  // Diffuse texture
+    mtlFile << "map_Kd " << textureFileName << std::endl;  // Diffuse texture (remove .png)
     
     mtlFile.close();
     std::cout << "MTL dosyası oluşturuldu: " << mtlFilePath << std::endl;

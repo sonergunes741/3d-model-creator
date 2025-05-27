@@ -128,8 +128,8 @@ int main(int argc, char** argv) {
         std::cout << "Toplam " << args.sampleCount << " görüntü işlenecek." << std::endl;
     }
     
-    // Increase sample count for denser point cloud
-    args.sampleCount = std::min(400, (int)std::min(laserFiles.size(), colorFiles.size()));
+    // Use the actual number of available images
+    args.sampleCount = std::min(laserFiles.size(), colorFiles.size());
     
     // Çıktı klasörünü oluştur
     createOutputDirectory(args.outputPath);
@@ -139,9 +139,9 @@ int main(int argc, char** argv) {
     
     // Lazer rengi ayarla - bardağın yüzeyindeki lazer çizgisi için uygun değerler
     laserDetector.setThresholds(cv::Scalar(120, 20, 100), cv::Scalar(179, 255, 255));
-    
+
     // Kontrast ve keskinlik ayarla
-    laserDetector.setContrastEnhancement(2.5, 0);  // Daha güçlü kontrast
+    laserDetector.setContrastEnhancement(3.5, 0);  // Daha güçlü kontrast
     
     // Blurlama ayarla
     laserDetector.setMedianBlur(5);  // 5x5 median blur
@@ -154,48 +154,9 @@ int main(int argc, char** argv) {
     // Debug modunu ayarla
     laserDetector.setDebugMode(args.debugMode);
     
-    // ROI ayarla (eğer belirtildiyse)
-    if (args.useROI) {
-        laserDetector.setROI(args.roiX, args.roiY, args.roiWidth, args.roiHeight);
-        std::cout << "ROI etkinleştirildi: x=" << args.roiX << ", y=" << args.roiY 
-                 << ", genişlik=" << args.roiWidth << ", yükseklik=" << args.roiHeight << std::endl;
-    }
-    
-    // İnteraktif mod kontrolü
-    if (args.interactiveMode) {
-        std::cout << "İnteraktif lazer tespiti modu başlatılıyor..." << std::endl;
-        
-        if (laserFiles.empty()) {
-            std::cerr << "İnteraktif mod için görüntü bulunamadı!" << std::endl;
-            return 1;
-        }
-        
-        // İlk görüntüyü yükle
-        cv::Mat firstImage = cv::imread(laserFiles[0]);
-        
-        if (firstImage.empty()) {
-            std::cerr << "İlk lazer görüntüsü yüklenemedi: " << laserFiles[0] << std::endl;
-            return 1;
-        }
-        
-        // İnteraktif lazer optimizasyonu yap
-        bool optimizationSuccess = laserDetector.optimizeROIAndDetectLaser(firstImage);
-        
-        if (!optimizationSuccess) {
-            std::cout << "İnteraktif mod iptal edildi. Çıkılıyor..." << std::endl;
-            return 0;
-        }
-        
-        // Kullanıcıya devam etmek isteyip istemediğini sor
-        std::cout << "Taramaya devam etmek istiyor musunuz? (e/h): ";
-        char response;
-        std::cin >> response;
-        
-        if (response != 'e' && response != 'E') {
-            std::cout << "İşlem kullanıcı tarafından sonlandırıldı." << std::endl;
-            return 0;
-        }
-    }
+    // ROI ayarla (her zaman sabit ROI kullan)
+    laserDetector.setROI(854, 1106, 621, 621);
+    std::cout << "Sabit ROI kullanılıyor: x=854, y=1106, genişlik=621, yükseklik=700" << std::endl;
     
     PointCloudBuilder pointCloudBuilder;
     // Adjusted scan parameters for better cup reconstruction
@@ -220,6 +181,9 @@ int main(int argc, char** argv) {
     // Adım 1: Lazer çizgileri işle ve 3D nokta bulutu oluştur
     std::cout << "1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Başladı" << std::endl;
     
+    // Scanner approach: Determine rotation center from first image
+    bool rotationCenterDetermined = false;
+    
     for (int i = 0; i < totalImages; i++) {
         // İlerleme göster
         if (i % 10 == 0) {
@@ -239,30 +203,6 @@ int main(int argc, char** argv) {
         if (i == 0) {
             imageWidth = laserImage.cols;
             imageHeight = laserImage.rows;
-            
-            // ROI belirtilmediyse ve debug modu açıksa, kullanıcıdan ROI seçmesini iste
-            if (args.debugMode && !args.useROI && !args.interactiveMode) {
-                std::cout << "İlgi alanı (ROI) seçmek ister misiniz? (e/h): ";
-                char response;
-                std::cin >> response;
-                
-                if (response == 'e' || response == 'E') {
-                    // Debug penceresi oluştur ve ROI seçimine hazırla
-                    cv::Mat firstImage = laserImage.clone();
-                    cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
-                    cv::resizeWindow("Select ROI", 640, 480);
-                    
-                    std::cout << "Lütfen lazer çizgisini içeren bölgeyi seçin (fareyle dikdörtgen çizin)." << std::endl;
-                    cv::Rect selectedROI = cv::selectROI("Select ROI", firstImage, false, false);
-                    
-                    // ROI'yi ayarla
-                    laserDetector.setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
-                    std::cout << "ROI seçildi: x=" << selectedROI.x << ", y=" << selectedROI.y 
-                             << ", genişlik=" << selectedROI.width << ", yükseklik=" << selectedROI.height << std::endl;
-                    
-                    cv::destroyWindow("Select ROI");
-                }
-            }
         }
         
         // Belirli görüntüler için debug modu etkinleştir
@@ -279,6 +219,12 @@ int main(int argc, char** argv) {
         // Lazer çizgisini tespit et
         std::vector<cv::Point> laserLine = laserDetector.detectLaserLine(laserImage);
         
+        // Scanner approach: Determine rotation center from first image
+        if (i == 0 && !rotationCenterDetermined) {
+            pointCloudBuilder.determineRotationCenterFromFirstImage(laserLine, imageWidth);
+            rotationCenterDetermined = true;
+        }
+        
         // Nokta bulutuna ekle
         size_t prevSize = pointCloudBuilder.pointImageInfo.size();
         pointCloudBuilder.addLineToCloud(laserLine, angle, imageWidth, imageHeight);
@@ -290,6 +236,10 @@ int main(int argc, char** argv) {
     
     std::cout << "\n1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Tamamlandı" << std::endl;
     std::cout << "Nokta bulutu filtreleniyor..." << std::endl;
+    
+    // Scanner-style filtering option (can be made configurable)
+    // Apply scanner-style vertical precision filtering (optional)
+    // pointCloudBuilder.applyScannerStyleFiltering(80);  // 80% precision
     
     // Nokta bulutunu filtrele ve hazırla
     pointCloudBuilder.processPointCloud();
