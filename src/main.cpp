@@ -181,9 +181,6 @@ int main(int argc, char** argv) {
     // Adım 1: Lazer çizgileri işle ve 3D nokta bulutu oluştur
     std::cout << "1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Başladı" << std::endl;
     
-    // Scanner approach: Determine rotation center from first image
-    bool rotationCenterDetermined = false;
-    
     for (int i = 0; i < totalImages; i++) {
         // İlerleme göster
         if (i % 10 == 0) {
@@ -219,12 +216,6 @@ int main(int argc, char** argv) {
         // Lazer çizgisini tespit et
         std::vector<cv::Point> laserLine = laserDetector.detectLaserLine(laserImage);
         
-        // Scanner approach: Determine rotation center from first image
-        if (i == 0 && !rotationCenterDetermined) {
-            pointCloudBuilder.determineRotationCenterFromFirstImage(laserLine, imageWidth);
-            rotationCenterDetermined = true;
-        }
-        
         // Nokta bulutuna ekle
         size_t prevSize = pointCloudBuilder.pointImageInfo.size();
         pointCloudBuilder.addLineToCloud(laserLine, angle, imageWidth, imageHeight);
@@ -236,10 +227,6 @@ int main(int argc, char** argv) {
     
     std::cout << "\n1. Aşama: Lazer çizgilerinden 3D nokta bulutu oluşturuluyor - Tamamlandı" << std::endl;
     std::cout << "Nokta bulutu filtreleniyor..." << std::endl;
-    
-    // Scanner-style filtering option (can be made configurable)
-    // Apply scanner-style vertical precision filtering (optional)
-    // pointCloudBuilder.applyScannerStyleFiltering(80);  // 80% precision
     
     // Nokta bulutunu filtrele ve hazırla
     pointCloudBuilder.processPointCloud();

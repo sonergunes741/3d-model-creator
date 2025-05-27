@@ -89,28 +89,6 @@ public:
      * @param centerZ Merkez Z koordinatı
      */
     void setScanParameters(float radius, float centerX, float centerY, float centerZ);
-    
-    /**
-     * @brief Rotasyon merkezi X koordinatını ayarlar (scanner yaklaşımı)
-     * 
-     * @param centerX Rotasyon merkezi X koordinatı (piksel cinsinden)
-     */
-    void setRotationCenterX(int centerX);
-    
-    /**
-     * @brief İlk görüntüden rotasyon merkezini otomatik belirler (scanner yaklaşımı)
-     * 
-     * @param laserLine İlk görüntüdeki lazer çizgisi noktaları
-     * @param imageWidth Görüntü genişliği
-     */
-    void determineRotationCenterFromFirstImage(const std::vector<cv::Point>& laserLine, int imageWidth);
-
-    /**
-     * @brief Scanner yaklaşımı ile nokta filtreleme (dikey hassasiyet kontrolü)
-     * 
-     * @param verticalPrecision Dikey hassasiyet yüzdesi (0-100)
-     */
-    void applyScannerStyleFiltering(int verticalPrecision = 100);
 
 private:
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud;
@@ -118,8 +96,6 @@ private:
     cv::Mat distCoeffs;
     float scanRadius;
     float scanCenterX, scanCenterY, scanCenterZ;
-    int rotationCenterX;
-    bool useCustomRotationCenter;
 
     /**
      * @brief Görüntü noktasını 3D dünya koordinatlarına dönüştürür
