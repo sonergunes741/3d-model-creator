@@ -691,7 +691,6 @@ class ScannerGUI:
                 
                 creator_cmd = [
                     executable_path,
-                    '--debug',
                     '--interactive'
                 ]
                 

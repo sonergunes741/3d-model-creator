@@ -69,7 +69,7 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
     bool meshCreated = false;
     
     // YÖNTEM 1: Greedy Projection Triangulation - Bardak gibi nesneler için daha güvenilir
-    if (!meshCreated) {
+    /*if (!meshCreated) {
         try {
             pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
             pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
@@ -98,7 +98,7 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
         } catch (const std::exception& e) {
             std::cerr << "Greedy Projection hatası: " << e.what() << std::endl;
         }
-    }
+    }*/
     
     // YÖNTEM 2: Poisson Surface Reconstruction
     if (!meshCreated) {
@@ -106,12 +106,12 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
             pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
             
             poisson.setInputCloud(cloudWithNormals);
-            poisson.setDepth(poissonDepth);  // Kullanıcı tanımlı derinlik değeri
+            poisson.setDepth(12);  // Kullanıcı tanımlı derinlik değeri
             poisson.setSolverDivide(8);
             poisson.setIsoDivide(8);
             poisson.setSamplesPerNode(1.0);  // Daha esnek oluşturma
             poisson.setConfidence(false);
-            poisson.setManifold(false);  // Manifold kısıtlamasını kaldır
+            poisson.setManifold(true);  // Manifold kısıtlamasını kaldır
             poisson.setOutputPolygons(true);
             
             std::cout << "Poisson mesh oluşturuluyor..." << std::endl;
