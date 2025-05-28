@@ -14,7 +14,7 @@ endif()
 
 # OpenCV, PCL, ve Eigen kütüphanelerini bul
 find_package(OpenCV REQUIRED)
-find_package(PCL 1.8 REQUIRED COMPONENTS common io filters surface features kdtree search)
+find_package(PCL 1.8 REQUIRED COMPONENTS common io filters surface features kdtree search visualization)
 find_package(Eigen3 REQUIRED)
 
 # Include dizinlerini ayarla
@@ -42,6 +42,7 @@ add_executable(3DModelCreator
 target_link_libraries(3DModelCreator
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
+    pcl_visualization  # PCL visualization kütüphanesini ekle
     stdc++fs  # filesystem kütüphanesi için
     ${OpenMP_CXX_LIBRARIES}  # OpenMP kütüphaneleri
 )

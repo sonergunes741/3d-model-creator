@@ -3,6 +3,7 @@
 #include <vector>
 #include <filesystem>  // C++17 için
 #include <opencv2/opencv.hpp>
+#include <pcl/visualization/cloud_viewer.h>  // PCL visualization header
 
 #include "LaserLineDetector.h"
 #include "PointCloudBuilder.h"
