@@ -107,6 +107,15 @@ public:
      */
     void setDilation(int iterations, int kernelSize);
 
+    /**
+     * @brief Renkli görüntüden otomatik ROI tespiti yapar
+     * 
+     * @param colorImage Renkli görüntü
+     * @param padding ROI etrafına eklenecek boşluk (piksel)
+     * @return bool ROI başarıyla tespit edildi mi
+     */
+    bool detectROIFromColorImage(const cv::Mat& colorImage, int padding = 20);
+
 private:
     cv::Scalar lowerThreshold;
     cv::Scalar upperThreshold;

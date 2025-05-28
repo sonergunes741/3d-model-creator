@@ -7,6 +7,8 @@
 #include <pcl/surface/marching_cubes_hoppe.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/surface/simplification_remove_unused_vertices.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
 #include <iostream>
 #include <pcl/surface/vtk_smoothing/vtk_utils.h>
 #include <pcl/surface/vtk_smoothing/vtk_mesh_smoothing_laplacian.h>
@@ -27,7 +29,7 @@ void MeshCreator::computeNormals(
     std::cout << "Giriş nokta bulutu boyutu: " << cloud->points.size() << std::endl;
     
     // Normal tahmini için k-komşu sayısı
-    int k = 15;  // Bardak için optimize edilmiş değer
+    int k = 15;  // Bardak için optimize edilmiş değer 
     
     // Normal tahmini için nesne oluştur
     pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> normalEstimation;
@@ -60,63 +62,79 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
     // Nokta bulutu bilgilerini yazdır
     std::cout << "Mesh oluşturma için nokta sayısı: " << cloud->points.size() << std::endl;
     
+    // Nokta bulutunu ön işleme tabi tut
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr processedCloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+    
+    // 1. Voxel Grid filtreleme ile nokta sayısını azalt
+    pcl::VoxelGrid<pcl::PointXYZRGB> voxelGrid;
+    voxelGrid.setInputCloud(cloud);
+    voxelGrid.setLeafSize(0.2f, 0.2f, 0.2f);  // 0.5cm voxel boyutu
+    voxelGrid.filter(*processedCloud);
+    
+    std::cout << "Voxel Grid filtrelemeden sonra nokta sayısı: " << processedCloud->points.size() << std::endl;
+    
+    // 2. Statistical Outlier Removal ile gürültüyü azalt
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloudFiltered(new pcl::PointCloud<pcl::PointXYZRGB>);
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZRGB> sor;
+    sor.setInputCloud(processedCloud);
+    sor.setMeanK(60);  // Komşu sayısı
+    sor.setStddevMulThresh(0.8);  // Standart sapma çarpanı
+    sor.filter(*cloudFiltered);
+    
+    std::cout << "Gürültü temizlemeden sonra nokta sayısı: " << cloudFiltered->points.size() << std::endl;
+    
     // Normalleri hesapla
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloudWithNormals(new pcl::PointCloud<pcl::PointXYZRGBNormal>);
-    computeNormals(cloud, cloudWithNormals);
+    computeNormals(cloudFiltered, cloudWithNormals);
     
     // Sonuç mesh'i
     pcl::PolygonMesh resultMesh;
     bool meshCreated = false;
     
-    // YÖNTEM 1: Greedy Projection Triangulation - Bardak gibi nesneler için daha güvenilir
+    // YÖNTEM 1: Poisson Surface Reconstruction - Deliksiz ve düzgün mesh için birincil yöntem
     if (!meshCreated) {
         try {
-            pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+            /*
+                pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
             pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
             tree->setInputCloud(cloudWithNormals);
-            
-            // Bardak gibi nesneler için optimize edilmiş parametreler
-            gp3.setSearchRadius(10.0);  // Daha büyük arama yarıçapı 
-            gp3.setMu(5.0);  // Daha geniş arama
-            gp3.setMaximumNearestNeighbors(100);  // Daha fazla komşu
+            /*
+            200 foto için
+            gp3.setSearchRadius(40.0);  // Çok daha büyük arama yarıçapı
+            gp3.setMu(10.0);  // Çok daha geniş arama
+            gp3.setMaximumNearestNeighbors(300);  // Çok daha fazla komşu
             gp3.setMinimumAngle(M_PI/18);  // 10 derece
             gp3.setMaximumAngle(2*M_PI/2.5);  // ~140 derece
+            
+            // Bardak gibi nesneler için optimize edilmiş parametreler
+            gp3.setSearchRadius(20.0);  // Arama yarıçapını daha da artır
+            gp3.setMu(2.5);  // Daha geniş arama
+            gp3.setMaximumNearestNeighbors(100);  // Komşu sayısını daha da artır
+            gp3.setMinimumAngle(M_PI/18);  // 2 derece - çok daha küçük açılar için
+            gp3.setMaximumAngle(2*M_PI/2.5);  // 300 derece - çok daha geniş açılar için
             gp3.setNormalConsistency(false);  // Normal tutarlılığını devre dışı bırak
+            //gp3.setConsistentVertexOrdering(true);  // Tutarlı köşe sıralaması
+            
             
             gp3.setInputCloud(cloudWithNormals);
             gp3.setSearchMethod(tree);
             
             std::cout << "Greedy Projection mesh oluşturuluyor..." << std::endl;
-            gp3.reconstruct(resultMesh);
-            
-            if (resultMesh.polygons.size() > 0) {
-                std::cout << "Greedy Projection mesh oluşturuldu. Yüzey sayısı: " << resultMesh.polygons.size() << std::endl;
-                meshCreated = true;
-            } else {
-                std::cout << "Greedy Projection mesh oluşturulamadı, diğer yöntem deneniyor..." << std::endl;
-            }
-        } catch (const std::exception& e) {
-            std::cerr << "Greedy Projection hatası: " << e.what() << std::endl;
-        }
-    }
-    
-    // YÖNTEM 2: Poisson Surface Reconstruction
-    if (!meshCreated) {
-        try {
+            gp3.reconstruct(resultMesh)
+            */
             pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
-            
             poisson.setInputCloud(cloudWithNormals);
-            poisson.setDepth(poissonDepth);  // Kullanıcı tanımlı derinlik değeri
+            poisson.setDepth(12);  // 10-14 arası deneyebilirsiniz
             poisson.setSolverDivide(8);
             poisson.setIsoDivide(8);
-            poisson.setSamplesPerNode(1.0);  // Daha esnek oluşturma
+            poisson.setSamplesPerNode(1.0);
             poisson.setConfidence(false);
-            poisson.setManifold(false);  // Manifold kısıtlamasını kaldır
+            poisson.setManifold(true); // Manifold mesh üretimi için
             poisson.setOutputPolygons(true);
-            
+
             std::cout << "Poisson mesh oluşturuluyor..." << std::endl;
             poisson.reconstruct(resultMesh);
-            
+
             if (resultMesh.polygons.size() > 0) {
                 std::cout << "Poisson mesh oluşturuldu. Yüzey sayısı: " << resultMesh.polygons.size() << std::endl;
                 meshCreated = true;
@@ -127,6 +145,36 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
             std::cerr << "Poisson hatası: " << e.what() << std::endl;
         }
     }
+    
+    // YÖNTEM 2: Greedy Projection Triangulation - Yedek olarak bırakıldı
+    /*
+    if (!meshCreated) {
+        try {
+            pcl::GreedyProjectionTriangulation<pcl::PointXYZRGBNormal> gp3;
+            pcl::search::KdTree<pcl::PointXYZRGBNormal>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZRGBNormal>);
+            tree->setInputCloud(cloudWithNormals);
+            // Parametreler...
+            gp3.setSearchRadius(20.0);
+            gp3.setMu(2.5);
+            gp3.setMaximumNearestNeighbors(100);
+            gp3.setMinimumAngle(M_PI/18);
+            gp3.setMaximumAngle(2*M_PI/2.5);
+            gp3.setNormalConsistency(false);
+            gp3.setInputCloud(cloudWithNormals);
+            gp3.setSearchMethod(tree);
+            std::cout << "Greedy Projection mesh oluşturuluyor..." << std::endl;
+            gp3.reconstruct(resultMesh);
+            if (resultMesh.polygons.size() > 0) {
+                std::cout << "Greedy Projection mesh oluşturuldu. Yüzey sayısı: " << resultMesh.polygons.size() << std::endl;
+                meshCreated = true;
+            } else {
+                std::cout << "Greedy Projection mesh oluşturulamadı, diğer yöntem deneniyor..." << std::endl;
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Greedy Projection hatası: " << e.what() << std::endl;
+        }
+    }
+    */
     
     // YÖNTEM 3: Marching Cubes - Son çare
     if (!meshCreated) {

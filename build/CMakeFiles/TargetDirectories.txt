@@ -1,3 +1,0 @@
-/workspaces/3d-model-creator/build/CMakeFiles/3DModelCreator.dir
-/workspaces/3d-model-creator/build/CMakeFiles/edit_cache.dir
-/workspaces/3d-model-creator/build/CMakeFiles/rebuild_cache.dir

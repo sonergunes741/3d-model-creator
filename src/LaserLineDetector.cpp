@@ -10,7 +10,7 @@ LaserLineDetector::LaserLineDetector(const cv::Scalar& lowerThresh, const cv::Sc
       contrastBeta(0),
       roiEnabled(false),
       roiX(0), roiY(0), roiWidth(0), roiHeight(0),
-      binaryThreshold(128),
+      binaryThreshold(128), //128
       useGaussianBlur(true),
       gaussianKernelSize(5),
       gaussianSigma(1.5),
@@ -532,4 +532,88 @@ bool LaserLineDetector::optimizeROIAndDetectLaser(const cv::Mat& image) {
 
 void LaserLineDetector::setDebugMode(bool enable) { 
     debugMode = enable; 
+}
+
+bool LaserLineDetector::detectROIFromColorImage(const cv::Mat& colorImage, int padding) {
+    if (colorImage.empty()) {
+        std::cerr << "Hata: Renkli görüntü boş!" << std::endl;
+        return false;
+    }
+
+    // HSV renk uzayına çevir ve beyaz nesneyi maskele
+    cv::Mat hsvImage;
+    cv::cvtColor(colorImage, hsvImage, cv::COLOR_BGR2HSV);
+    cv::Mat whiteMask;
+    // Beyaz için alt ve üst HSV eşikleri (gerekirse ayarlanabilir)
+    cv::inRange(hsvImage, cv::Scalar(0, 0, 180), cv::Scalar(180, 60, 255), whiteMask);
+
+    // Morfolojik işlemler
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(5, 5));
+    cv::morphologyEx(whiteMask, whiteMask, cv::MORPH_CLOSE, kernel);
+    cv::morphologyEx(whiteMask, whiteMask, cv::MORPH_OPEN, kernel);
+
+    // Konturları bul
+    std::vector<std::vector<cv::Point>> contours;
+    cv::findContours(whiteMask, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
+
+    if (contours.empty()) {
+        std::cerr << "Hata: Beyaz nesne konturu bulunamadı! Elle ROI seçimine geçiliyor..." << std::endl;
+        // Elle ROI seçimi
+        cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Select ROI", 800, 600);
+        cv::Rect selectedROI = cv::selectROI("Select ROI", colorImage, false, false);
+        if (selectedROI.width == 0 || selectedROI.height == 0) {
+            std::cerr << "Elle ROI seçimi iptal edildi!" << std::endl;
+            cv::destroyWindow("Select ROI");
+            return false;
+        }
+        setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
+        cv::destroyWindow("Select ROI");
+        return true;
+    }
+
+    // En büyük ve makul boyutta konturu bul
+    size_t maxContourIdx = 0;
+    double maxArea = 0;
+    double imageArea = colorImage.cols * colorImage.rows;
+    for (size_t i = 0; i < contours.size(); i++) {
+        double area = cv::contourArea(contours[i]);
+        if (area > maxArea && area < imageArea * 0.8) {
+            maxArea = area;
+            maxContourIdx = i;
+        }
+    }
+    if (maxArea == 0) {
+        std::cerr << "Hata: Uygun boyutta beyaz nesne konturu bulunamadı! Elle ROI seçimine geçiliyor..." << std::endl;
+        // Elle ROI seçimi
+        cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Select ROI", 800, 600);
+        cv::Rect selectedROI = cv::selectROI("Select ROI", colorImage, false, false);
+        if (selectedROI.width == 0 || selectedROI.height == 0) {
+            std::cerr << "Elle ROI seçimi iptal edildi!" << std::endl;
+            cv::destroyWindow("Select ROI");
+            return false;
+        }
+        setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
+        cv::destroyWindow("Select ROI");
+        return true;
+    }
+
+    // En büyük konturun sınırlayıcı dikdörtgenini bul
+    cv::Rect boundingRect = cv::boundingRect(contours[maxContourIdx]);
+    roiX = std::max(0, boundingRect.x - padding);
+    roiY = std::max(0, boundingRect.y - padding);
+    roiWidth = std::min(colorImage.cols - roiX, boundingRect.width + 2 * padding);
+    roiHeight = std::min(colorImage.rows - roiY, boundingRect.height + 2 * padding);
+    roiEnabled = true;
+
+    if (debugMode) {
+        cv::Mat debugImage = colorImage.clone();
+        cv::rectangle(debugImage, cv::Rect(roiX, roiY, roiWidth, roiHeight), cv::Scalar(0, 255, 0), 2);
+        cv::namedWindow("ROI Detection", cv::WINDOW_NORMAL);
+        cv::resizeWindow("ROI Detection", 800, 600);
+        cv::imshow("ROI Detection", debugImage);
+        cv::waitKey(1);
+    }
+    return true;
 }

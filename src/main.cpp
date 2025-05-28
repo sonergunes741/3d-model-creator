@@ -150,65 +150,47 @@ int main(int argc, char** argv) {
     // Debug modunu ayarla
     laserDetector.setDebugMode(args.debugMode);
     
-    // ROI ayarla (eğer belirtildiyse)
-    if (args.useROI) {
-        laserDetector.setROI(args.roiX, args.roiY, args.roiWidth, args.roiHeight);
-        std::cout << "ROI etkinleştirildi: x=" << args.roiX << ", y=" << args.roiY 
-                 << ", genişlik=" << args.roiWidth << ", yükseklik=" << args.roiHeight << std::endl;
-    }
-    
-    // İnteraktif mod kontrolü
-    if (args.interactiveMode) {
-        std::cout << "İnteraktif lazer tespiti modu başlatılıyor..." << std::endl;
-        
-        if (laserFiles.empty()) {
-            std::cerr << "İnteraktif mod için görüntü bulunamadı!" << std::endl;
-            return 1;
+    // ROI'yi her zaman elle seçtir
+    cv::Mat roiSelectImage;
+    if (!colorFiles.empty())
+        roiSelectImage = cv::imread(colorFiles[0]);
+    else if (!laserFiles.empty())
+        roiSelectImage = cv::imread(laserFiles[0]);
+    if (!roiSelectImage.empty()) {
+        cv::namedWindow("Select ROI", cv::WINDOW_NORMAL);
+        cv::resizeWindow("Select ROI", 800, 600);
+        cv::Rect selectedROI = cv::selectROI("Select ROI", roiSelectImage, false, false);
+        if (selectedROI.width == 0 || selectedROI.height == 0) {
+            std::cerr << "Elle ROI seçimi iptal edildi! Varsayılan ROI kullanılacak." << std::endl;
+            laserDetector.setROI(854, 1106, 621, 621);
+        } else {
+            laserDetector.setROI(selectedROI.x, selectedROI.y, selectedROI.width, selectedROI.height);
+            std::cout << "Elle seçilen ROI: x=" << selectedROI.x << ", y=" << selectedROI.y << ", w=" << selectedROI.width << ", h=" << selectedROI.height << std::endl;
         }
-        
-        // İlk görüntüyü yükle
-        cv::Mat firstImage = cv::imread(laserFiles[0]);
-        
-        if (firstImage.empty()) {
-            std::cerr << "İlk lazer görüntüsü yüklenemedi: " << laserFiles[0] << std::endl;
-            return 1;
-        }
-        
-        // İnteraktif lazer optimizasyonu yap
-        bool optimizationSuccess = laserDetector.optimizeROIAndDetectLaser(firstImage);
-        
-        if (!optimizationSuccess) {
-            std::cout << "İnteraktif mod iptal edildi. Çıkılıyor..." << std::endl;
-            return 0;
-        }
-        
-        // Kullanıcıya devam etmek isteyip istemediğini sor
-        std::cout << "Taramaya devam etmek istiyor musunuz? (e/h): ";
-        char response;
-        std::cin >> response;
-        
-        if (response != 'e' && response != 'E') {
-            std::cout << "İşlem kullanıcı tarafından sonlandırıldı." << std::endl;
-            return 0;
-        }
+        cv::destroyWindow("Select ROI");
+    } else {
+        std::cerr << "Hiçbir görüntü yüklenemedi, varsayılan ROI kullanılacak." << std::endl;
+        laserDetector.setROI(854, 1106, 621, 621);
     }
     
     PointCloudBuilder pointCloudBuilder;
     // Bardak için optimal tarama parametreleri
     pointCloudBuilder.setScanParameters(50.0f, 0.0f, 0.0f, 0.0f);
     
-    // Optimum mesh kalitesi için 7 derinlik kullan (bardak gibi nesneler için)
-    MeshCreator meshCreator(7);
+    //200 foto için 14
+    // Optimum mesh kalitesi için derinlik değerini artır
+    MeshCreator meshCreator(16);  // Derinlik değerini 15'ten 16'ya çıkar
     
-    // Set aggressive smoothing parameters
-    meshCreator.setSmoothingParameters(100, 0.0005f);
+    //200 foto için 200, 0.001f
+    // Daha agresif smoothing parametreleri
+    meshCreator.setSmoothingParameters(2000, 0.02f);  // İterasyon sayısını ve smoothing faktörünü artır
     
     ColorMapper colorMapper;
     OBJExporter objExporter;
     
     // Belirli aralıklarla görselleştirme için numaralar
-    std::vector<int> previewIndices = {0, 40, 90, 140, 190}; // 1., 41., 91., 141., 191. görüntüler
-    
+    //std::vector<int> previewIndices = {0, 40, 90, 140, 190, 240, 290, 340, 390}; // 1., 41., 91., 141., 191. görüntüler
+    std::vector<int> previewIndices = {0, 40, 90, 140, 190};
     // İşlenecek toplam görüntü sayısı
     const int totalImages = args.sampleCount;
     int imageWidth = 0, imageHeight = 0;

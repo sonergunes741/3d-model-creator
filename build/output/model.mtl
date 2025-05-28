@@ -1,9 +1,0 @@
-# MTL file created by 3D Model Creator
-newmtl model_material
-Ka 1.000 1.000 1.000
-Kd 1.000 1.000 1.000
-Ks 0.000 0.000 0.000
-Ns 10.0
-d 1.0
-illum 2
-map_Kd model.png.png
