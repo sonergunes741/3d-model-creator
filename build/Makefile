@@ -201,29 +201,29 @@ src/MeshCreator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/MeshCreator.cpp.s
 .PHONY : src/MeshCreator.cpp.s
 
-src/OBJExporter.o: src/OBJExporter.cpp.o
-.PHONY : src/OBJExporter.o
+src/MeshExporter.o: src/MeshExporter.cpp.o
+.PHONY : src/MeshExporter.o
 
 # target to build an object file
-src/OBJExporter.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/OBJExporter.cpp.o
-.PHONY : src/OBJExporter.cpp.o
+src/MeshExporter.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/MeshExporter.cpp.o
+.PHONY : src/MeshExporter.cpp.o
 
-src/OBJExporter.i: src/OBJExporter.cpp.i
-.PHONY : src/OBJExporter.i
+src/MeshExporter.i: src/MeshExporter.cpp.i
+.PHONY : src/MeshExporter.i
 
 # target to preprocess a source file
-src/OBJExporter.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/OBJExporter.cpp.i
-.PHONY : src/OBJExporter.cpp.i
+src/MeshExporter.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/MeshExporter.cpp.i
+.PHONY : src/MeshExporter.cpp.i
 
-src/OBJExporter.s: src/OBJExporter.cpp.s
-.PHONY : src/OBJExporter.s
+src/MeshExporter.s: src/MeshExporter.cpp.s
+.PHONY : src/MeshExporter.s
 
 # target to generate assembly for a file
-src/OBJExporter.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/OBJExporter.cpp.s
-.PHONY : src/OBJExporter.cpp.s
+src/MeshExporter.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/3DModelCreator.dir/build.make CMakeFiles/3DModelCreator.dir/src/MeshExporter.cpp.s
+.PHONY : src/MeshExporter.cpp.s
 
 src/PointCloudBuilder.o: src/PointCloudBuilder.cpp.o
 .PHONY : src/PointCloudBuilder.o
@@ -291,9 +291,9 @@ help:
 	@echo "... src/MeshCreator.o"
 	@echo "... src/MeshCreator.i"
 	@echo "... src/MeshCreator.s"
-	@echo "... src/OBJExporter.o"
-	@echo "... src/OBJExporter.i"
-	@echo "... src/OBJExporter.s"
+	@echo "... src/MeshExporter.o"
+	@echo "... src/MeshExporter.i"
+	@echo "... src/MeshExporter.s"
 	@echo "... src/PointCloudBuilder.o"
 	@echo "... src/PointCloudBuilder.i"
 	@echo "... src/PointCloudBuilder.s"

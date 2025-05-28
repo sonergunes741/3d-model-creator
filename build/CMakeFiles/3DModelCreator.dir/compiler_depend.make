@@ -3466,9 +3466,9 @@ CMakeFiles/3DModelCreator.dir/src/MeshCreator.cpp.o: /workspaces/3d-model-creato
   /usr/include/vtk-9.1/vtkSmartPointer.h \
   /usr/include/pcl-1.13/pcl/surface/vtk_smoothing/vtk_mesh_smoothing_laplacian.h
 
-CMakeFiles/3DModelCreator.dir/src/OBJExporter.cpp.o: /workspaces/3d-model-creator/src/OBJExporter.cpp \
+CMakeFiles/3DModelCreator.dir/src/MeshExporter.cpp.o: /workspaces/3d-model-creator/src/MeshExporter.cpp \
   /usr/include/stdc-predef.h \
-  /workspaces/3d-model-creator/src/OBJExporter.h \
+  /workspaces/3d-model-creator/src/MeshExporter.h \
   /usr/include/pcl-1.13/pcl/PolygonMesh.h \
   /usr/include/c++/12/algorithm \
   /usr/include/c++/12/bits/stl_algobase.h \
@@ -4370,6 +4370,37 @@ CMakeFiles/3DModelCreator.dir/src/OBJExporter.cpp.o: /workspaces/3d-model-creato
   /usr/include/opencv4/opencv2/video.hpp \
   /usr/include/opencv4/opencv2/video/tracking.hpp \
   /usr/include/opencv4/opencv2/video/background_segm.hpp \
+  /usr/include/assimp/Exporter.hpp \
+  /usr/include/assimp/cexport.h \
+  /usr/include/assimp/types.h \
+  /usr/include/assimp/defs.h \
+  /usr/include/assimp/config.h \
+  /usr/include/assimp/vector2.h \
+  /usr/include/assimp/vector3.h \
+  /usr/include/assimp/color4.h \
+  /usr/include/assimp/matrix3x3.h \
+  /usr/include/assimp/matrix4x4.h \
+  /usr/include/assimp/quaternion.h \
+  /usr/include/assimp/vector2.inl \
+  /usr/include/assimp/vector3.inl \
+  /usr/include/assimp/color4.inl \
+  /usr/include/assimp/matrix3x3.inl \
+  /usr/include/assimp/matrix4x4.inl \
+  /usr/include/assimp/MathFunctions.h \
+  /usr/include/assimp/quaternion.inl \
+  /usr/include/assimp/scene.h \
+  /usr/include/assimp/texture.h \
+  /usr/include/assimp/Compiler/pushpack1.h \
+  /usr/include/assimp/Compiler/poppack1.h \
+  /usr/include/assimp/mesh.h \
+  /usr/include/assimp/aabb.h \
+  /usr/include/assimp/light.h \
+  /usr/include/assimp/camera.h \
+  /usr/include/assimp/material.h \
+  /usr/include/assimp/material.inl \
+  /usr/include/assimp/anim.h \
+  /usr/include/assimp/metadata.h \
+  /usr/include/assimp/postprocess.h \
   /usr/include/pcl-1.13/pcl/io/pcd_io.h \
   /usr/include/pcl-1.13/pcl/io/file_io.h \
   /usr/include/pcl-1.13/pcl/conversions.h \
@@ -6928,10 +6959,39 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
   /usr/include/pcl-1.13/pcl/common/common.h \
   /usr/include/pcl-1.13/pcl/common/impl/common.hpp \
   /workspaces/3d-model-creator/src/ColorMapper.h \
-  /workspaces/3d-model-creator/src/OBJExporter.h
+  /workspaces/3d-model-creator/src/MeshExporter.h \
+  /usr/include/assimp/Exporter.hpp \
+  /usr/include/assimp/cexport.h \
+  /usr/include/assimp/types.h \
+  /usr/include/assimp/defs.h \
+  /usr/include/assimp/config.h \
+  /usr/include/assimp/vector2.h \
+  /usr/include/assimp/vector3.h \
+  /usr/include/assimp/color4.h \
+  /usr/include/assimp/matrix3x3.h \
+  /usr/include/assimp/matrix4x4.h \
+  /usr/include/assimp/quaternion.h \
+  /usr/include/assimp/vector2.inl \
+  /usr/include/assimp/vector3.inl \
+  /usr/include/assimp/color4.inl \
+  /usr/include/assimp/matrix3x3.inl \
+  /usr/include/assimp/matrix4x4.inl \
+  /usr/include/assimp/MathFunctions.h \
+  /usr/include/assimp/quaternion.inl \
+  /usr/include/assimp/scene.h \
+  /usr/include/assimp/texture.h \
+  /usr/include/assimp/Compiler/pushpack1.h \
+  /usr/include/assimp/Compiler/poppack1.h \
+  /usr/include/assimp/mesh.h \
+  /usr/include/assimp/aabb.h \
+  /usr/include/assimp/light.h \
+  /usr/include/assimp/camera.h \
+  /usr/include/assimp/material.h \
+  /usr/include/assimp/material.inl \
+  /usr/include/assimp/anim.h \
+  /usr/include/assimp/metadata.h \
+  /usr/include/assimp/postprocess.h
 
-
-/usr/include/pcl-1.13/pcl/filters/voxel_grid.h:
 
 /usr/include/pcl-1.13/pcl/filters/filter.h:
 
@@ -6945,9 +7005,45 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/c++/12/filesystem:
 
-/workspaces/3d-model-creator/src/OBJExporter.h:
+/usr/include/assimp/postprocess.h:
 
-/workspaces/3d-model-creator/src/OBJExporter.cpp:
+/usr/include/assimp/material.h:
+
+/usr/include/assimp/camera.h:
+
+/usr/include/pcl-1.13/pcl/filters/voxel_grid.h:
+
+/usr/include/assimp/aabb.h:
+
+/usr/include/assimp/mesh.h:
+
+/usr/include/assimp/Compiler/poppack1.h:
+
+/usr/include/assimp/Compiler/pushpack1.h:
+
+/usr/include/assimp/MathFunctions.h:
+
+/usr/include/assimp/matrix4x4.inl:
+
+/usr/include/assimp/matrix3x3.inl:
+
+/usr/include/assimp/color4.inl:
+
+/usr/include/assimp/vector2.inl:
+
+/usr/include/assimp/matrix3x3.h:
+
+/usr/include/assimp/color4.h:
+
+/usr/include/assimp/vector3.h:
+
+/usr/include/assimp/vector2.h:
+
+/usr/include/assimp/config.h:
+
+/usr/include/assimp/types.h:
+
+/workspaces/3d-model-creator/src/MeshExporter.cpp:
 
 /usr/include/pcl-1.13/pcl/surface/vtk_smoothing/vtk.h:
 
@@ -7539,9 +7635,13 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/boost/iterator/iterator_adaptor.hpp:
 
+/usr/include/assimp/cexport.h:
+
 /usr/include/boost/iterator/reverse_iterator.hpp:
 
 /usr/include/boost/range/reverse_iterator.hpp:
+
+/usr/include/assimp/vector3.inl:
 
 /usr/include/boost/range/empty.hpp:
 
@@ -7694,6 +7794,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/eigen3/Eigen/src/Geometry/Scaling.h:
 
 /usr/include/opencv4/opencv2/core/base.hpp:
+
+/usr/include/assimp/defs.h:
 
 /usr/include/boost/preprocessor/list/adt.hpp:
 
@@ -8089,6 +8191,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/eigen3/Eigen/src/plugins/CommonCwiseBinaryOps.h:
 
+/usr/include/assimp/matrix4x4.h:
+
 /usr/include/boost/config/platform/linux.hpp:
 
 /usr/include/aarch64-linux-gnu/bits/posix_opt.h:
@@ -8188,6 +8292,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/boost/fusion/sequence/intrinsic_fwd.hpp:
 
 /usr/include/boost/mpl/vector/aux_/pop_front.hpp:
+
+/usr/include/assimp/texture.h:
 
 /usr/include/eigen3/Eigen/src/Core/util/SymbolicIndex.h:
 
@@ -8324,6 +8430,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/eigen3/Eigen/src/Cholesky/LDLT.h:
 
 /usr/include/c++/12/functional:
+
+/usr/include/assimp/Exporter.hpp:
 
 /usr/include/boost/mpl/long_fwd.hpp:
 
@@ -8557,6 +8665,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/c++/12/bits/stl_deque.h:
 
+/usr/include/assimp/scene.h:
+
 /usr/lib/gcc/aarch64-linux-gnu/12/include/arm_bf16.h:
 
 /usr/include/aarch64-linux-gnu/bits/pthread_stack_min-dynamic.h:
@@ -8647,6 +8757,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/boost/preprocessor/array/elem.hpp:
 
+/usr/include/assimp/light.h:
+
 /usr/include/vtk-9.1/vtkDebugLeaksManager.h:
 
 /usr/include/pcl-1.13/pcl/type_traits.h:
@@ -8692,6 +8804,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/c++/12/stdexcept:
 
 /usr/include/eigen3/Eigen/src/plugins/IndexedViewMethods.h:
+
+/usr/include/assimp/anim.h:
 
 /usr/include/vtk-9.1/vtkObjectBase.h:
 
@@ -9239,6 +9353,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/c++/12/compare:
 
+/usr/include/assimp/quaternion.h:
+
 /usr/include/c++/12/bits/std_abs.h:
 
 /usr/include/eigen3/Eigen/StdVector:
@@ -9454,6 +9570,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/boost/preprocessor/array/data.hpp:
 
 /usr/include/boost/type_traits/remove_reference.hpp:
+
+/usr/include/assimp/quaternion.inl:
 
 /usr/include/boost/preprocessor/inc.hpp:
 
@@ -9853,6 +9971,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/vtk-9.1/vtkFiltersGeneralModule.h:
 
+/usr/include/assimp/metadata.h:
+
 /usr/include/c++/12/bits/stl_map.h:
 
 /usr/include/boost/fusion/iterator/value_of_data.hpp:
@@ -10155,6 +10275,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 
 /usr/include/boost/numeric/conversion/detail/udt_builtin_mixture.hpp:
 
+/usr/include/assimp/material.inl:
+
 /usr/include/vtk-9.1/vtkOStreamWrapper.h:
 
 /usr/include/boost/mpl/multiplies.hpp:
@@ -10262,6 +10384,8 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: /workspaces/3d-model-creator/src/m
 /usr/include/boost/fusion/iterator/detail/segment_sequence.hpp:
 
 /usr/include/boost/numeric/conversion/cast.hpp:
+
+/workspaces/3d-model-creator/src/MeshExporter.h:
 
 /usr/include/boost/mpl/eval_if.hpp:
 

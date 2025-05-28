@@ -1,0 +1,56 @@
+# Build directories
+build/
+build/output/
+
+# Scan directories (downloaded photos)
+scan/
+scan/laser/
+scan/color/
+gui/scan/
+gui/scan/laser/
+gui/scan/color/
+
+# Generated output files
+*.obj
+*.mtl
+*.png
+*.ply
+*.fbx
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Compiled binaries
+bin/
+*.exe
+*.out
+*.app
+
+# IDE files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# PCL and OpenCV cache files
+*.pcd
+*.yaml 

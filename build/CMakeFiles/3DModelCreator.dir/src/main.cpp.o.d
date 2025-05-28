@@ -1145,4 +1145,20 @@ CMakeFiles/3DModelCreator.dir/src/main.cpp.o: \
  /usr/include/pcl-1.13/pcl/common/common.h \
  /usr/include/pcl-1.13/pcl/common/impl/common.hpp \
  /workspaces/3d-model-creator/src/ColorMapper.h \
- /workspaces/3d-model-creator/src/OBJExporter.h
+ /workspaces/3d-model-creator/src/MeshExporter.h \
+ /usr/include/assimp/Exporter.hpp /usr/include/assimp/cexport.h \
+ /usr/include/assimp/types.h /usr/include/assimp/defs.h \
+ /usr/include/assimp/config.h /usr/include/assimp/vector2.h \
+ /usr/include/assimp/vector3.h /usr/include/assimp/color4.h \
+ /usr/include/assimp/matrix3x3.h /usr/include/assimp/matrix4x4.h \
+ /usr/include/assimp/quaternion.h /usr/include/assimp/vector2.inl \
+ /usr/include/assimp/vector3.inl /usr/include/assimp/color4.inl \
+ /usr/include/assimp/matrix3x3.inl /usr/include/assimp/matrix4x4.inl \
+ /usr/include/assimp/MathFunctions.h /usr/include/assimp/quaternion.inl \
+ /usr/include/assimp/scene.h /usr/include/assimp/texture.h \
+ /usr/include/assimp/Compiler/pushpack1.h \
+ /usr/include/assimp/Compiler/poppack1.h /usr/include/assimp/mesh.h \
+ /usr/include/assimp/aabb.h /usr/include/assimp/light.h \
+ /usr/include/assimp/camera.h /usr/include/assimp/material.h \
+ /usr/include/assimp/material.inl /usr/include/assimp/anim.h \
+ /usr/include/assimp/metadata.h /usr/include/assimp/postprocess.h

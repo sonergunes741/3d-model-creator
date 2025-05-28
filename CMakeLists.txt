@@ -12,10 +12,11 @@ if(OpenMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-# OpenCV, PCL, ve Eigen kütüphanelerini bul
+# OpenCV, PCL, Eigen ve Assimp kütüphanelerini bul
 find_package(OpenCV REQUIRED)
 find_package(PCL 1.8 REQUIRED COMPONENTS common io filters surface features kdtree search)
 find_package(Eigen3 REQUIRED)
+find_package(assimp REQUIRED)
 
 # Include dizinlerini ayarla
 include_directories(
@@ -35,13 +36,14 @@ add_executable(3DModelCreator
     src/PointCloudBuilder.cpp
     src/MeshCreator.cpp
     src/ColorMapper.cpp
-    src/OBJExporter.cpp
+    src/MeshExporter.cpp
 )
 
 # Kütüphaneleri bağla
 target_link_libraries(3DModelCreator
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
+    assimp  # Assimp kütüphanesi (binary FBX export için)
     stdc++fs  # filesystem kütüphanesi için
     ${OpenMP_CXX_LIBRARIES}  # OpenMP kütüphaneleri
 )

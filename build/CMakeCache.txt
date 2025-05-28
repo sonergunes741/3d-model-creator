@@ -696,10 +696,10 @@ X11_Xpm_INCLUDE_PATH:PATH=X11_Xpm_INCLUDE_PATH-NOTFOUND
 X11_Xpm_LIB:FILEPATH=X11_Xpm_LIB-NOTFOUND
 
 //Path to a file.
-X11_Xrandr_INCLUDE_PATH:PATH=X11_Xrandr_INCLUDE_PATH-NOTFOUND
+X11_Xrandr_INCLUDE_PATH:PATH=/usr/include
 
 //Path to a library.
-X11_Xrandr_LIB:FILEPATH=X11_Xrandr_LIB-NOTFOUND
+X11_Xrandr_LIB:FILEPATH=/usr/lib/aarch64-linux-gnu/libXrandr.so
 
 //Path to a file.
 X11_Xrender_INCLUDE_PATH:PATH=/usr/include
@@ -824,6 +824,9 @@ ZLIB_LIBRARY_DEBUG:FILEPATH=ZLIB_LIBRARY_DEBUG-NOTFOUND
 //Path to a library.
 ZLIB_LIBRARY_RELEASE:FILEPATH=/usr/lib/aarch64-linux-gnu/libz.so
 
+//The directory containing a CMake configuration file for assimp.
+assimp_DIR:PATH=/usr/lib/aarch64-linux-gnu/cmake/assimp-5.2
+
 //The directory containing a CMake configuration file for boost_date_time.
 boost_date_time_DIR:PATH=/usr/lib/aarch64-linux-gnu/cmake/boost_date_time-1.74.0
 
@@ -847,6 +850,9 @@ double-conversion_INCLUDE_DIR:PATH=/usr/include/double-conversion
 
 //double-conversion library
 double-conversion_LIBRARY:FILEPATH=/usr/lib/aarch64-linux-gnu/libdouble-conversion.so
+
+//The directory containing a CMake configuration file for draco.
+draco_DIR:PATH=/usr/lib/aarch64-linux-gnu/cmake/draco
 
 //The directory containing a CMake configuration file for flann.
 flann_DIR:PATH=/usr/lib/cmake/flann

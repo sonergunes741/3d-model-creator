@@ -1,9 +1,10 @@
 # MTL file created by 3D Model Creator
+# Optimized for Unreal Engine import
 newmtl model_material
-Ka 0.200 0.200 0.200
-Kd 0.800 0.800 0.800
-Ks 0.100 0.100 0.100
-Ns 32.0
-d 1.0
-illum 2
-map_Kd model
+Ka 0.200 0.200 0.200  # Ambient color
+Kd 1.000 1.000 1.000  # Diffuse color (white to show texture properly)
+Ks 0.000 0.000 0.000  # Specular color (disabled for better texture display)
+Ns 0.0                # Specular exponent (disabled)
+d 1.0                 # Transparency (fully opaque)
+illum 1               # Illumination model (diffuse only)
+map_Kd model.png  # Diffuse texture map

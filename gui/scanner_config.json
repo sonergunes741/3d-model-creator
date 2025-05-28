@@ -1,0 +1,14 @@
+{
+    "ssh_user": "realityshapers",
+    "ssh_host": "10.1.91.214",
+    "ssh_pass": "rs123",
+    "remote_scanner_project": "/home/realityshapers/Desktop/scanner_project",
+    "remote_lazer_path": "/home/realityshapers/Desktop/scanner_project/lazer",
+    "remote_leds_path": "/home/realityshapers/Desktop/scanner_project/leds",
+    "local_3d_creator": "./bin/3DModelCreator",
+    "local_scan_dir": "./scan",
+    "local_laser_dir": "./scan/laser",
+    "local_color_dir": "./scan/color",
+    "local_build_dir": ".",
+    "local_output_dir": "./output"
+}
