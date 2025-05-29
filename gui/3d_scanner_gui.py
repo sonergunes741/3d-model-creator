@@ -729,41 +729,18 @@ class ScannerGUI:
     
     def run_laser_scan(self):
         """Run laser scanning on Raspberry Pi"""
-        # Onay kutucuğu öncesi status güncellenmesin
-        if not self.connection_status:
-            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
-            return
-        # Check if local photos exist and require user confirmation for deletion
-        if self.check_local_photos_exist():
-            laser_count = len([f for f in os.listdir(self.config['local_laser_dir']) 
-                             if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
-            color_count = len([f for f in os.listdir(self.config['local_color_dir']) 
-                             if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
-            result = messagebox.askyesno(
-                "Delete Existing Photos?", 
-                f"Local photos already exist:\n"
-                f"• Laser photos: {laser_count}\n"
-                f"• Color photos: {color_count}\n\n"
-                f"To start scanning, all existing photos must be deleted:\n"
-                f"Do you want to delete all existing photos and start scanning?"
-            )
-            if not result:
-                self.log_message("⏸️ Scanning cancelled by user - photos not deleted")
-                return
-        # Onaydan sonra status güncellenir
+        # Reset scan and download status at the start of a new scan
         self.scan_status = False
         self.download_status = False
         self.scanning_active = True
         self.update_status_display()
-        # Set laser and led status to off (hem GUI hem donanım)
+        # Set laser and led status to off
         self.laser_status = False
         self.led_status = False
         self.laser_status_var.set("❌ KAPALI")
         self.led_status_var.set("❌ KAPALI")
         self.laser_status_label.config(foreground="red")
         self.led_status_label.config(foreground="red")
-        self.laser_off()
-        self.led_off()
         
         if not self.connection_status:
             messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
@@ -1004,27 +981,7 @@ class ScannerGUI:
     
     def create_3d_model(self):
         """Create 3D model using downloaded photos"""
-        # Onay kutucuğu öncesi status güncellenmesin
-        if not self.check_local_photos_exist():
-            messagebox.showwarning("No Photos Found", "Please scan and download photos first, or ensure local photos exist!")
-            return
-        laser_count = len([f for f in os.listdir(self.config['local_laser_dir']) 
-                         if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
-        color_count = len([f for f in os.listdir(self.config['local_color_dir']) 
-                         if f.lower().endswith(('.jpg', '.jpeg', '.png'))])
-        photo_source = "downloaded from Raspberry Pi" if self.download_status else "found locally"
-        result = messagebox.askyesno(
-            "Create 3D Model", 
-            f"Ready to create 3D model using photos {photo_source}:\n\n"
-            f"• Laser photos: {laser_count}\n"
-            f"• Color photos: {color_count}\n\n"
-            f"This process may take several minutes.\n\n"
-            f"Continue?"
-        )
-        if not result:
-            self.log_message("⏸️ 3D model creation cancelled by user")
-            return
-        # Onaydan sonra status güncellenir
+        # Reset model status at the start of a new model creation
         self.model_status = False
         self.model_active = True
         self.update_status_display()
@@ -1585,7 +1542,6 @@ class ScannerGUI:
     
     def show_detailed_status(self):
         """Show detailed status information"""
-        self.update_status_display()  # Senkronizasyon için
         status_window = tk.Toplevel(self.root)
         status_window.title("Detailed Status")
         status_window.geometry("500x400")
