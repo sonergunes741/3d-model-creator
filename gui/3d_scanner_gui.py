@@ -1137,11 +1137,16 @@ class ScannerGUI:
                         size = os.path.getsize(file_path)
                         self.log_message(f"   • {file} ({size} bytes)")
                         
-                        # Copy to Downloads folder
+                        # Copy to Downloads folder (auto-rename if exists)
                         downloads_file_path = os.path.join(downloads_path, file)
+                        base, ext = os.path.splitext(file)
+                        counter = 1
+                        while os.path.exists(downloads_file_path):
+                            downloads_file_path = os.path.join(downloads_path, f"{base} ({counter}){ext}")
+                            counter += 1
                         try:
                             shutil.copy2(file_path, downloads_file_path)
-                            self.log_message(f"   • Copied to Downloads: {file}")
+                            self.log_message(f"   • Copied to Downloads: {os.path.basename(downloads_file_path)}")
                         except Exception as e:
                             self.log_message(f"   ⚠️ Could not copy to Downloads: {str(e)}")
                     
