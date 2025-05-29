@@ -152,8 +152,7 @@ class ScannerGUI:
         status_items = [
             ("1. CONNECTION", "connection_status"),
             ("2. SCAN & DOWNLOAD", "scan_status"),
-            ("3. 3D MODEL", "model_status"),
-            ("4. VIEW 3D", "view_status")
+            ("3. 3D MODEL", "model_status")
         ]
         
         for i, (label, status_key) in enumerate(status_items):
@@ -231,6 +230,14 @@ class ScannerGUI:
 
     def motor_full_rotation(self):
         """Full 360 degree rotation"""
+        self.laser_status = False
+        self.led_status = False
+        self.laser_status_var.set("❌ KAPALI")
+        self.led_status_var.set("❌ KAPALI")
+        self.laser_status_label.config(foreground="red")
+        self.led_status_label.config(foreground="red")
+        self.laser_off()
+        self.led_off()
         if self.execute_laser_command("motor_rotation"):
             self.log_message("🔄 Motor tam dönüş tamamlandı")
 
@@ -243,7 +250,8 @@ class ScannerGUI:
     def execute_laser_command(self, command):
         """Execute laser control command on Raspberry Pi"""
         if not self.connection_status:
-            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            if not getattr(self, "shutting_down", False):
+                messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
             return False
         
         try:
@@ -317,7 +325,8 @@ class ScannerGUI:
     def update_laser_status(self):
         """Update laser and LED status from Raspberry Pi"""
         if not self.connection_status:
-            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            if not getattr(self, "shutting_down", False):
+                messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
             return
         
         try:
@@ -375,7 +384,7 @@ class ScannerGUI:
         self.model_btn.grid(row=0, column=2, padx=5, pady=5)
         
         # VIEW 3D button with no action for now
-        self.view_btn = ttk.Button(button_grid, text="4. VIEW 3D", command=lambda: None, width=15, state=tk.DISABLED)
+        self.view_btn = ttk.Button(button_grid, text="4. VIEW 3D", command=self.view_3d_model, width=15, state=tk.DISABLED)
         self.view_btn.grid(row=0, column=3, padx=5, pady=5)
 
         self.stop_btn = ttk.Button(button_grid, text="🛑 STOP SCAN", command=self.stop_scanner, width=15, state=tk.DISABLED)
@@ -417,7 +426,8 @@ class ScannerGUI:
     def stop_scanner(self):
         """Send SIGINT (Ctrl+C) to running scanner process"""
         if not self.connection_status:
-            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            if not getattr(self, "shutting_down", False):
+                messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
             return
         
         try:
@@ -732,8 +742,7 @@ class ScannerGUI:
         # Reset scan and download status at the start of a new scan
         self.scan_status = False
         self.download_status = False
-        self.scanning_active = True
-        self.update_status_display()
+
         # Set laser and led status to off
         self.laser_status = False
         self.led_status = False
@@ -741,9 +750,12 @@ class ScannerGUI:
         self.led_status_var.set("❌ KAPALI")
         self.laser_status_label.config(foreground="red")
         self.led_status_label.config(foreground="red")
+        self.laser_off()
+        self.led_off()
         
         if not self.connection_status:
-            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            if not getattr(self, "shutting_down", False):
+                messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
             return
         
         # Check if local photos exist and require user confirmation for deletion
@@ -768,6 +780,8 @@ class ScannerGUI:
             
         def scan_thread():
             try:
+                self.scanning_active = True
+                self.update_status_display()
                 # Disable all buttons except FOLDERS and STATUS
                 self.disable_buttons_during_operation("scan")
                 
@@ -983,8 +997,15 @@ class ScannerGUI:
         """Create 3D model using downloaded photos"""
         # Reset model status at the start of a new model creation
         self.model_status = False
-        self.model_active = True
-        self.update_status_display()
+
+        # Sadece bağlantı varsa lazer ve led'i kapat
+        if self.connection_status:
+            self.laser_off()
+            self.led_off()
+            self.laser_status_var.set("❌ KAPALI")
+            self.led_status_var.set("❌ KAPALI")
+            self.laser_status_label.config(foreground="red")
+            self.led_status_label.config(foreground="red")
         
         # Check if photos exist (either downloaded or already present)
         if not self.check_local_photos_exist():
@@ -1014,6 +1035,8 @@ class ScannerGUI:
         
         def model_thread():
             try:
+                self.model_active = True
+                self.update_status_display()
                 # Disable all buttons except FOLDERS and STATUS
                 self.disable_buttons_during_operation("model")
                 
@@ -1104,10 +1127,24 @@ class ScannerGUI:
                     self.model_status = True
                     self.log_message("✅ 3D MODEL CREATED SUCCESSFULLY!")
                     self.log_message("📄 Generated files:")
+                    
+                    # Get user's Downloads folder path
+                    downloads_path = os.path.join(os.path.expanduser("~"), "Downloads")
+                    
+                    # Copy files to both output and Downloads folders
                     for file in output_files:
                         file_path = os.path.join(output_dir_used, file)
                         size = os.path.getsize(file_path)
                         self.log_message(f"   • {file} ({size} bytes)")
+                        
+                        # Copy to Downloads folder
+                        downloads_file_path = os.path.join(downloads_path, file)
+                        try:
+                            shutil.copy2(file_path, downloads_file_path)
+                            self.log_message(f"   • Copied to Downloads: {file}")
+                        except Exception as e:
+                            self.log_message(f"   ⚠️ Could not copy to Downloads: {str(e)}")
+                    
                     self.progress_var.set("3D model created successfully")
                     messagebox.showinfo("Success", f"3D model created successfully!\n\nGenerated files:\n" + "\n".join(output_files))
                 else:
@@ -1128,78 +1165,12 @@ class ScannerGUI:
         threading.Thread(target=model_thread, daemon=True).start()
     
     def view_3d_model(self):
-        """View the created 3D model using 3dviewer.net with automatic upload and fallback to transfer.sh if file.io fails"""
-        if self.viewer_active:
-            self.close_web_viewer()
-            return
-
-        if not self.check_model_files_exist():
-            messagebox.showwarning("No Model Found", "Please create a 3D model first!")
-            return
-
-        def open_web_viewer_thread():
-            try:
-                self.viewer_active = True
-                self.root.after(0, self.update_status_display)
-                self.log_message("🌐 3DVIEWER.NET İÇİN MODEL YÜKLENİYOR")
-                obj_file_path = None
-                output_dir = self.config['local_output_dir']
-                if os.path.exists(output_dir):
-                    obj_files = [f for f in os.listdir(output_dir) if f.lower().endswith('.obj')]
-                    if obj_files:
-                        obj_file_path = os.path.join(output_dir, obj_files[0])
-                if not obj_file_path:
-                    self.viewer_active = False
-                    self.root.after(0, self.update_status_display)
-                    self.root.after(0, lambda: messagebox.showerror("Model Error", f"No OBJ file found in GUI output directory: {output_dir}"))
-                    return
-
-                from urllib.parse import quote
-                # Önce file.io ile yüklemeyi dene
-                try:
-                    with open(obj_file_path, 'rb') as f:
-                        files = {'file': f}
-                        response = requests.post('https://file.io/', files=files)
-                    self.log_message(f"file.io yanıtı: {response.text}")
-                    try:
-                        result = response.json()
-                    except Exception as e:
-                        raise Exception("file.io'dan geçersiz yanıt alındı veya servis çalışmıyor.")
-                    if response.status_code == 200 and result.get('success'):
-                        file_url = result.get('link')
-                        self.log_message(f"   Model başarıyla yüklendi: {file_url}")
-                        viewer_url = f"https://3dviewer.net/#model={quote(file_url)}"
-                        webbrowser.open(viewer_url)
-                        self.log_message("✅ 3D MODEL 3dviewer.net'te otomatik açıldı (file.io)")
-                        return
-                    else:
-                        raise Exception("file.io upload failed: " + str(result))
-                except Exception as e:
-                    self.log_message(f"file.io başarısız: {str(e)}. transfer.sh ile tekrar deneniyor...")
-                    # transfer.sh ile yükle
-                    try:
-                        with open(obj_file_path, 'rb') as f:
-                            response = requests.put(f'https://transfer.sh/{os.path.basename(obj_file_path)}', data=f)
-                        self.log_message(f"transfer.sh yanıtı: {response.text}")
-                        if response.status_code == 200:
-                            file_url = response.text.strip()
-                            self.log_message(f"   Model transfer.sh ile yüklendi: {file_url}")
-                            viewer_url = f"https://3dviewer.net/#model={quote(file_url)}"
-                            webbrowser.open(viewer_url)
-                            self.log_message("✅ 3D MODEL 3dviewer.net'te otomatik açıldı (transfer.sh)")
-                            return
-                        else:
-                            raise Exception(f"transfer.sh upload failed: {response.text}")
-                    except Exception as e2:
-                        raise Exception(f"Hem file.io hem transfer.sh başarısız: {str(e2)}")
-            except Exception as e:
-                self.viewer_active = False
-                self.root.after(0, self.update_status_display)
-                error_msg = f"Failed to open 3dviewer.net:\n{str(e)}"
-                self.log_message(f"❌ 3dviewer.net açma hatası: {str(e)}")
-                self.root.after(0, lambda: messagebox.showerror("Viewer Error", error_msg))
-        threading.Thread(target=open_web_viewer_thread, daemon=True).start()
-        self.log_message("🔄 3dviewer.net için hazırlık yapılıyor...")
+        """Open the specified URL in the default web browser (non-blocking)."""
+        import threading
+        def open_browser():
+            webbrowser.open('https://morphix-wheat.vercel.app/')
+            self.log_message("✅ 3D viewer opened in the default web browser.")
+        threading.Thread(target=open_browser, daemon=True).start()
     
     def close_web_viewer(self):
         """Close the web-based 3D viewer and clean up temporary files"""
@@ -1540,32 +1511,34 @@ class ScannerGUI:
         except Exception:
             return None
     
+    def get_workflow_status_lines(self):
+        """Return workflow status lines as a list of strings, matching the main display."""
+        statuses = self.status_labels
+        lines = []
+        lines.append(f"1. CONNECTION    : {statuses['connection_status'].get()}")
+        lines.append(f"2. SCAN & DOWNLOAD : {statuses['scan_status'].get()}")
+        lines.append(f"3. 3D MODEL      : {statuses['model_status'].get()}")
+        return lines
+
     def show_detailed_status(self):
         """Show detailed status information"""
         status_window = tk.Toplevel(self.root)
         status_window.title("Detailed Status")
         status_window.geometry("500x400")
-        
         text_widget = scrolledtext.ScrolledText(status_window, font=("Consolas", 10))
         text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
+
         status_text = f"""
 DETAILED WORKFLOW STATUS
 {'=' * 50}
 
 Raspberry Pi Target: {self.config['ssh_user']}@{self.config['ssh_host']}
 
-1. Connection    : {'✅ Connected' if self.connection_status else '❌ Not Connected'}
-2. Scanning      : {'✅ Completed' if self.scan_status else '⏸️ Pending'}
-3. Download      : {'✅ Completed' if self.download_status else '⏸️ Pending'}
-4. 3D Model      : {'✅ Created' if self.model_status else '⏸️ Pending'}
-
-Working Directory: {os.getcwd()}
-
-LOCAL FOLDER STATUS:
-{'=' * 30}
 """
-        
+        # Workflow status lines (birebir ana ekranla aynı)
+        status_text += "\n".join(self.get_workflow_status_lines()) + "\n"
+        status_text += f"\nWorking Directory: {os.getcwd()}\n\nLOCAL FOLDER STATUS:\n{'=' * 30}\n"
+
         # Check local folders
         folders_to_check = [
             ("3D Creator Executable", self.config['local_3d_creator']),
@@ -1869,9 +1842,8 @@ LOCAL FOLDER STATUS:
         photos_available = self.check_local_photos_exist()
         self.model_btn.config(state=tk.NORMAL if photos_available else tk.DISABLED)
         
-        # VIEW 3D button: only enabled if model files exist
-        model_files_exist = self.check_model_files_exist()
-        self.view_btn.config(state=tk.NORMAL if model_files_exist else tk.DISABLED)
+        # VIEW 3D button: always enabled
+        self.view_btn.config(state=tk.NORMAL)
         
         # Re-enable all other buttons that were disabled
         for widget in self.root.winfo_children():
@@ -1895,10 +1867,8 @@ LOCAL FOLDER STATUS:
             photos_available = self.check_local_photos_exist()
             self.model_btn.config(state=tk.NORMAL if photos_available else tk.DISABLED)
             
-            # VIEW 3D button: only enabled if model files exist AND viewer is not already open
-            model_files_exist = self.check_model_files_exist()
-            view_enabled = model_files_exist and not self.viewer_active
-            self.view_btn.config(state=tk.NORMAL if view_enabled else tk.DISABLED)
+            # VIEW 3D button: always enabled
+            self.view_btn.config(state=tk.NORMAL)
 
             self.stop_btn.config(state=tk.NORMAL if self.scanning_active else tk.DISABLED)
 
