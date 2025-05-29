@@ -60,23 +60,23 @@ set_target_properties(3DModelCreator PROPERTIES
 )
 
 # 3D Model Viewer (OpenGL) executable
-add_executable(ModelViewer
-    src/viewer_main.cpp
-    src/ModelViewer.cpp
-)
+# add_executable(ModelViewer
+#     src/viewer_main.cpp
+#     src/ModelViewer.cpp
+# )
 
 # OpenGL viewer kütüphanelerini bağla
-target_link_libraries(ModelViewer
-    ${OPENGL_LIBRARIES}
-    glfw
-    GLEW::GLEW
-    glm::glm
-)
+# target_link_libraries(ModelViewer
+#     ${OPENGL_LIBRARIES}
+#     glfw
+#     GLEW::GLEW
+#     glm::glm
+# )
 
 # Viewer output konumunu ayarla
-set_target_properties(ModelViewer PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
-)
+# set_target_properties(ModelViewer PROPERTIES
+#     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+# )
 
 # Oluşturulan dosyaları göster
 message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")

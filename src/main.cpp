@@ -258,8 +258,7 @@ int main(int argc, char** argv) {
     pointCloudBuilder.processPointCloud();
 
     // Save the filtered point cloud to a PCD file for later viewing
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr filteredCloud = pointCloudBuilder.getCloud();
-    pcl::io::savePCDFileBinary("output/pointcloud.pcd", *filteredCloud);
+    // pcl::io::savePCDFileBinary("output/pointcloud.pcd", *filteredCloud);
     
     // Adım 2: Renk bilgisini işle
     std::cout << "2. Aşama: Renk bilgisi işleniyor - Başladı" << std::endl;
@@ -352,33 +351,30 @@ int main(int argc, char** argv) {
     std::cout << "4. Aşama: Mesh renklendiriliyor - Tamamlandı" << std::endl;
     
     // Adım 5: Multiple formats olarak dışa aktar
-    std::cout << "5. Aşama: Multiple format dosyaları oluşturuluyor (OBJ, PLY, FBX) - Başladı" << std::endl;
+    std::cout << "5. Aşama: OBJ formatında model oluşturuluyor - Başladı" << std::endl;
     
     // Texture boyutunu ayarla
     meshExporter.setUseVertexColors(true);
     meshExporter.setTextureResolution(4096, 4096);
     
-    // Mesh'i tüm formatlarda dışa aktar
+    // Mesh'i OBJ formatında dışa aktar
     std::string modelName = fs::path(args.outputPath).stem().string();
     std::string basePath = args.outputPath;
     if (basePath.size() >= 4 && basePath.substr(basePath.size() - 4) == ".obj") {
         basePath = basePath.substr(0, basePath.size() - 4);
     }
     
-    bool exportSuccess = meshExporter.exportAllFormats(mesh, basePath, modelName);
+    bool exportSuccess = meshExporter.exportMesh(mesh, basePath, MeshExporter::ExportFormat::OBJ, modelName);
     
-    std::cout << "5. Aşama: Multiple format dosyaları oluşturuluyor - Tamamlandı" << std::endl;
+    std::cout << "5. Aşama: OBJ formatında model oluşturuluyor - Tamamlandı" << std::endl;
     
     if (exportSuccess) {
         std::cout << "\nİşlem başarıyla tamamlandı!" << std::endl;
-        std::cout << "3D model oluşturuldu (multiple formats):" << std::endl;
+        std::cout << "3D model oluşturuldu (OBJ format):" << std::endl;
         std::cout << "  - OBJ: " << basePath << ".obj (+ .mtl + .png) - Universal format" << std::endl;
-        std::cout << "  - PLY: " << basePath << ".ply - Simple mesh format with colors" << std::endl;
-        std::cout << "  - FBX: " << basePath << ".fbx - ASCII FBX format" << std::endl;
         std::cout << "\nFormat önerileri:" << std::endl;
-        std::cout << "  - Blender/3D yazılımlar için: .obj veya .ply" << std::endl;
+        std::cout << "  - Blender/3D yazılımlar için: .obj" << std::endl;
         std::cout << "  - Unreal Engine için: .obj" << std::endl;
-        std::cout << "  - 3D yazıcılar için: .ply" << std::endl;
         std::cout << "  - Genel amaçlı: .obj (en uyumlu)" << std::endl;
     } else {
         std::cerr << "\nDosya oluşturulurken bir hata oluştu!" << std::endl;

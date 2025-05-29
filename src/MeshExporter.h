@@ -6,21 +6,16 @@
 #include <string>
 #include <vector>
 #include <opencv2/opencv.hpp>
-#include <assimp/Exporter.hpp>
-#include <assimp/scene.h>
-#include <assimp/postprocess.h>
 
 /**
- * @brief Multi-format 3D model exporter
+ * @brief OBJ format 3D model exporter
  * 
- * Supports OBJ, FBX, and GLTF/GLB export formats
+ * Exports 3D models in OBJ format with MTL and PNG texture files
  */
 class MeshExporter {
 public:
     enum class ExportFormat {
-        OBJ,    // OBJ + MTL + PNG
-        PLY,    // PLY format
-        FBX     // FBX format
+        OBJ    // OBJ + MTL + PNG
     };
 
     /**
@@ -29,11 +24,11 @@ public:
     MeshExporter();
     
     /**
-     * @brief Export mesh to specified format
+     * @brief Export mesh to OBJ format
      * 
      * @param mesh PCL PolygonMesh
      * @param outputPath Output file path (without extension)
-     * @param format Export format
+     * @param format Export format (only OBJ supported)
      * @param modelName Model name
      * @return bool Success status
      */
@@ -41,20 +36,6 @@ public:
         const pcl::PolygonMesh& mesh, 
         const std::string& outputPath, 
         ExportFormat format,
-        const std::string& modelName = "3DModel"
-    );
-    
-    /**
-     * @brief Export to all supported formats (OBJ, PLY, FBX)
-     * 
-     * @param mesh PCL PolygonMesh
-     * @param basePath Base output path (without extension)
-     * @param modelName Model name
-     * @return bool Success status
-     */
-    bool exportAllFormats(
-        const pcl::PolygonMesh& mesh,
-        const std::string& basePath,
         const std::string& modelName = "3DModel"
     );
 
@@ -83,10 +64,8 @@ private:
     int textureWidth;
     int textureHeight;
     
-    // Export methods for different formats
+    // Export methods for OBJ format
     bool exportOBJ(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName);
-    bool exportPLY(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName);
-    bool exportFBX(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName);
     
     // Helper methods
     std::vector<std::pair<float, float>> generateUVCoordinates(const pcl::PolygonMesh& mesh);
@@ -95,6 +74,4 @@ private:
     
     // Format-specific helpers
     bool writeOBJFiles(const pcl::PolygonMesh& mesh, const std::string& basePath, const std::string& modelName);
-    bool writePLYFile(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName);
-    bool writeFBXFile(const pcl::PolygonMesh& mesh, const std::string& outputPath, const std::string& modelName);
 }; 
