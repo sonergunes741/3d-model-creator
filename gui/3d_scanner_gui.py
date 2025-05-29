@@ -50,7 +50,7 @@ except ImportError:
 class ScannerGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("LASER SCANNER & 3D MODEL CREATOR - Raspberry Pi → Windows Workflow")
+        self.root.title("Morphix - Laser Scanner & 3D Model Creator")
         self.root.geometry("900x700")
         self.root.resizable(True, True)
         
@@ -121,11 +121,13 @@ class ScannerGUI:
         banner_frame = ttk.LabelFrame(parent, text="", padding=10)
         banner_frame.pack(fill=tk.X, pady=(0, 10))
         
-        title_label = ttk.Label(banner_frame, text="LASER SCANNER & 3D MODEL CREATOR", 
-                               font=("Arial", 16, "bold"), foreground="purple")
+        # Main project name
+        title_label = ttk.Label(banner_frame, text="Morphix", 
+                               font=("Arial", 20, "bold"), foreground="purple")
         title_label.pack()
         
-        subtitle_label = ttk.Label(banner_frame, text="Raspberry Pi → Windows Workflow", 
+        # Subtitle
+        subtitle_label = ttk.Label(banner_frame, text="Laser Scanner & 3D Model Creator", 
                                   font=("Arial", 12), foreground="blue")
         subtitle_label.pack()
         
@@ -268,6 +270,8 @@ class ScannerGUI:
             self.laser_status_var.set("✅ AÇIK")
             self.laser_status_label.config(foreground="green")
             self.log_message("🔴 LASER AÇILDI")
+            # Disable led_on_btn while laser is on
+            self.led_on_btn.config(state=tk.DISABLED)
 
     def laser_off(self):
         """Turn laser OFF"""
@@ -276,6 +280,8 @@ class ScannerGUI:
             self.laser_status_var.set("❌ KAPALI")
             self.laser_status_label.config(foreground="red")
             self.log_message("⚫ LASER KAPATILDI")
+            # Enable led_on_btn when laser is off
+            self.led_on_btn.config(state=tk.NORMAL)
 
     def led_on(self):
         """Turn LED ON"""
@@ -284,6 +290,8 @@ class ScannerGUI:
             self.led_status_var.set("✅ AÇIK")
             self.led_status_label.config(foreground="green")
             self.log_message("💡 LED AÇILDI")
+            # Disable laser_on_btn while LED is on
+            self.laser_on_btn.config(state=tk.DISABLED)
 
     def led_off(self):
         """Turn LED OFF"""
@@ -292,6 +300,8 @@ class ScannerGUI:
             self.led_status_var.set("❌ KAPALI")
             self.led_status_label.config(foreground="red")
             self.log_message("🔲 LED KAPATILDI")
+            # Enable laser_on_btn when LED is off
+            self.laser_on_btn.config(state=tk.NORMAL)
 
     def emergency_stop(self):
         """Emergency stop - turn everything OFF"""
@@ -364,7 +374,8 @@ class ScannerGUI:
         self.model_btn = ttk.Button(button_grid, text="3. CREATE MODEL", command=self.create_3d_model, width=15, state=tk.DISABLED)
         self.model_btn.grid(row=0, column=2, padx=5, pady=5)
         
-        self.view_btn = ttk.Button(button_grid, text="4. VIEW 3D", command=self.view_3d_model, width=15, state=tk.DISABLED)
+        # VIEW 3D button with no action for now
+        self.view_btn = ttk.Button(button_grid, text="4. VIEW 3D", command=lambda: None, width=15, state=tk.DISABLED)
         self.view_btn.grid(row=0, column=3, padx=5, pady=5)
 
         self.stop_btn = ttk.Button(button_grid, text="🛑 STOP SCAN", command=self.stop_scanner, width=15, state=tk.DISABLED)
@@ -375,11 +386,10 @@ class ScannerGUI:
         control_frame.pack(pady=(10, 0))
         
         ttk.Button(control_frame, text="STATUS", command=self.show_detailed_status, width=12).pack(side=tk.LEFT, padx=2)
-        ttk.Button(control_frame, text="DIAGNOSIS", command=self.network_diagnosis, width=12).pack(side=tk.LEFT, padx=2)
         ttk.Button(control_frame, text="RESET", command=self.reset_status, width=12).pack(side=tk.LEFT, padx=2)
         ttk.Button(control_frame, text="FOLDERS", command=self.check_local_folders, width=12).pack(side=tk.LEFT, padx=2)
         ttk.Button(control_frame, text="SETTINGS", command=self.show_settings, width=12).pack(side=tk.LEFT, padx=2)
-        
+    
     def setup_log_and_controls(self, parent):
         # Progress frame
         progress_frame = ttk.LabelFrame(parent, text="PROGRESS", padding=10)
@@ -719,6 +729,19 @@ class ScannerGUI:
     
     def run_laser_scan(self):
         """Run laser scanning on Raspberry Pi"""
+        # Reset scan and download status at the start of a new scan
+        self.scan_status = False
+        self.download_status = False
+        self.scanning_active = True
+        self.update_status_display()
+        # Set laser and led status to off
+        self.laser_status = False
+        self.led_status = False
+        self.laser_status_var.set("❌ KAPALI")
+        self.led_status_var.set("❌ KAPALI")
+        self.laser_status_label.config(foreground="red")
+        self.led_status_label.config(foreground="red")
+        
         if not self.connection_status:
             messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
             return
@@ -958,6 +981,11 @@ class ScannerGUI:
     
     def create_3d_model(self):
         """Create 3D model using downloaded photos"""
+        # Reset model status at the start of a new model creation
+        self.model_status = False
+        self.model_active = True
+        self.update_status_display()
+        
         # Check if photos exist (either downloaded or already present)
         if not self.check_local_photos_exist():
             messagebox.showwarning("No Photos Found", "Please scan and download photos first, or ensure local photos exist!")
@@ -1067,22 +1095,11 @@ class ScannerGUI:
                 
                 # Check if model files were created
                 output_files = []
-                # Check the default 3D creator output directory
-                default_output_dir = '../build/output'
-                
-                if os.path.exists(default_output_dir):
-                    for file in os.listdir(default_output_dir):
-                        if file.endswith(('.obj', '.mtl', '.png', '.ply')):
+                output_dir_used = self.config['local_output_dir']
+                if os.path.exists(output_dir_used):
+                    for file in os.listdir(output_dir_used):
+                        if file.endswith('.obj'):
                             output_files.append(file)
-                    output_dir_used = default_output_dir
-                else:
-                    # Fallback to GUI configured output directory
-                    output_dir_used = self.config['local_output_dir']
-                    if os.path.exists(output_dir_used):
-                        for file in os.listdir(output_dir_used):
-                            if file.endswith(('.obj', '.mtl', '.png', '.ply')):
-                                output_files.append(file)
-                
                 if output_files:
                     self.model_status = True
                     self.log_message("✅ 3D MODEL CREATED SUCCESSFULLY!")
@@ -1091,7 +1108,6 @@ class ScannerGUI:
                         file_path = os.path.join(output_dir_used, file)
                         size = os.path.getsize(file_path)
                         self.log_message(f"   • {file} ({size} bytes)")
-                    
                     self.progress_var.set("3D model created successfully")
                     messagebox.showinfo("Success", f"3D model created successfully!\n\nGenerated files:\n" + "\n".join(output_files))
                 else:
@@ -1112,69 +1128,78 @@ class ScannerGUI:
         threading.Thread(target=model_thread, daemon=True).start()
     
     def view_3d_model(self):
-        """View the created 3D model using online 3D viewer service (no embedded fallback)"""
-        # If viewer is active, close it
+        """View the created 3D model using 3dviewer.net with automatic upload and fallback to transfer.sh if file.io fails"""
         if self.viewer_active:
             self.close_web_viewer()
             return
-        
+
         if not self.check_model_files_exist():
             messagebox.showwarning("No Model Found", "Please create a 3D model first!")
             return
-        
+
         def open_web_viewer_thread():
             try:
                 self.viewer_active = True
                 self.root.after(0, self.update_status_display)
-                self.log_message("🌐 OPENING WEB-BASED 3D MODEL VIEWER")
+                self.log_message("🌐 3DVIEWER.NET İÇİN MODEL YÜKLENİYOR")
                 obj_file_path = None
                 output_dir = self.config['local_output_dir']
-                self.log_message(f"   Searching for models in: {os.path.abspath(output_dir)}")
                 if os.path.exists(output_dir):
                     obj_files = [f for f in os.listdir(output_dir) if f.lower().endswith('.obj')]
                     if obj_files:
                         obj_file_path = os.path.join(output_dir, obj_files[0])
-                        self.log_message(f"   Found model: {obj_files[0]}")
-                    else:
-                        self.log_message(f"   No OBJ files found in output directory")
-                else:
-                    self.log_message(f"   Output directory does not exist: {output_dir}")
                 if not obj_file_path:
                     self.viewer_active = False
                     self.root.after(0, self.update_status_display)
                     self.root.after(0, lambda: messagebox.showerror("Model Error", f"No OBJ file found in GUI output directory: {output_dir}"))
                     return
-                file_size = os.path.getsize(obj_file_path)
-                size_mb = file_size / (1024 * 1024)
-                self.log_message(f"   File size: {size_mb:.1f} MB")
-                if not REQUESTS_AVAILABLE:
-                    raise Exception("Python 'requests' module is not available for upload.")
-                self.log_message("   Uploading model to temporary hosting...")
-                with open(obj_file_path, 'rb') as f:
-                    files = {'file': f}
-                    response = requests.post('https://file.io/', files=files)
-                if response.status_code == 200:
-                    result = response.json()
-                    if result.get('success'):
+
+                from urllib.parse import quote
+                # Önce file.io ile yüklemeyi dene
+                try:
+                    with open(obj_file_path, 'rb') as f:
+                        files = {'file': f}
+                        response = requests.post('https://file.io/', files=files)
+                    self.log_message(f"file.io yanıtı: {response.text}")
+                    try:
+                        result = response.json()
+                    except Exception as e:
+                        raise Exception("file.io'dan geçersiz yanıt alındı veya servis çalışmıyor.")
+                    if response.status_code == 200 and result.get('success'):
                         file_url = result.get('link')
-                        self.log_message(f"   Model uploaded successfully: {file_url}")
+                        self.log_message(f"   Model başarıyla yüklendi: {file_url}")
                         viewer_url = f"https://3dviewer.net/#model={quote(file_url)}"
                         webbrowser.open(viewer_url)
-                        self.log_message("✅ 3D MODEL VIEWER OPENED WITH AUTOMATIC LOADING")
-                        self.log_message("   Model will load automatically in browser")
+                        self.log_message("✅ 3D MODEL 3dviewer.net'te otomatik açıldı (file.io)")
                         return
                     else:
-                        raise Exception("File upload failed: " + str(result))
-                else:
-                    raise Exception(f"Upload failed with status {response.status_code}")
+                        raise Exception("file.io upload failed: " + str(result))
+                except Exception as e:
+                    self.log_message(f"file.io başarısız: {str(e)}. transfer.sh ile tekrar deneniyor...")
+                    # transfer.sh ile yükle
+                    try:
+                        with open(obj_file_path, 'rb') as f:
+                            response = requests.put(f'https://transfer.sh/{os.path.basename(obj_file_path)}', data=f)
+                        self.log_message(f"transfer.sh yanıtı: {response.text}")
+                        if response.status_code == 200:
+                            file_url = response.text.strip()
+                            self.log_message(f"   Model transfer.sh ile yüklendi: {file_url}")
+                            viewer_url = f"https://3dviewer.net/#model={quote(file_url)}"
+                            webbrowser.open(viewer_url)
+                            self.log_message("✅ 3D MODEL 3dviewer.net'te otomatik açıldı (transfer.sh)")
+                            return
+                        else:
+                            raise Exception(f"transfer.sh upload failed: {response.text}")
+                    except Exception as e2:
+                        raise Exception(f"Hem file.io hem transfer.sh başarısız: {str(e2)}")
             except Exception as e:
                 self.viewer_active = False
                 self.root.after(0, self.update_status_display)
-                error_msg = f"Failed to open web viewer (no embedded fallback):\n{str(e)}"
-                self.log_message(f"❌ Web viewer failed: {str(e)}")
+                error_msg = f"Failed to open 3dviewer.net:\n{str(e)}"
+                self.log_message(f"❌ 3dviewer.net açma hatası: {str(e)}")
                 self.root.after(0, lambda: messagebox.showerror("Viewer Error", error_msg))
         threading.Thread(target=open_web_viewer_thread, daemon=True).start()
-        self.log_message("🔄 Preparing web-based 3D viewer...")
+        self.log_message("🔄 3dviewer.net için hazırlık yapılıyor...")
     
     def close_web_viewer(self):
         """Close the web-based 3D viewer and clean up temporary files"""
@@ -1594,49 +1619,6 @@ LOCAL FOLDER STATUS:
         
         text_widget.insert(tk.END, status_text)
         text_widget.config(state=tk.DISABLED)
-    
-    def network_diagnosis(self):
-        """Run network diagnosis"""
-        diag_window = tk.Toplevel(self.root)
-        diag_window.title("Network Diagnosis")
-        diag_window.geometry("600x400")
-        
-        text_widget = scrolledtext.ScrolledText(diag_window, font=("Consolas", 10))
-        text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-        
-        def run_diagnosis():
-            text_widget.insert(tk.END, "🔍 NETWORK CONNECTION DIAGNOSIS\n")
-            text_widget.insert(tk.END, "=" * 50 + "\n\n")
-            
-            text_widget.insert(tk.END, f"🎯 Target Device:\n")
-            text_widget.insert(tk.END, f"   Hostname: {self.config['ssh_host']}\n")
-            text_widget.insert(tk.END, f"   Username: {self.config['ssh_user']}\n\n")
-            
-            # Test SSH port
-            text_widget.insert(tk.END, "🔌 SSH Port Test:\n")
-            try:
-                import socket
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.settimeout(5)
-                result = sock.connect_ex((self.config['ssh_host'], 22))
-                sock.close()
-                
-                if result == 0:
-                    text_widget.insert(tk.END, "   ✅ SSH port (22) is open\n")
-                else:
-                    text_widget.insert(tk.END, "   ❌ SSH port is closed or unreachable\n")
-            except Exception as e:
-                text_widget.insert(tk.END, f"   ❌ Port test failed: {str(e)}\n")
-            
-            text_widget.insert(tk.END, "\n🛠️ RECOMMENDATIONS:\n")
-            text_widget.insert(tk.END, "   1. Check that Raspberry Pi is powered on\n")
-            text_widget.insert(tk.END, "   2. Verify network connection\n")
-            text_widget.insert(tk.END, "   3. Ensure SSH service is running\n")
-            text_widget.insert(tk.END, "   4. Check firewall settings\n")
-            
-            text_widget.see(tk.END)
-        
-        run_diagnosis()
     
     def reset_status(self):
         """Reset all status variables"""

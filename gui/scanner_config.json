@@ -10,5 +10,6 @@
     "local_laser_dir": "./scan/laser",
     "local_color_dir": "./scan/color",
     "local_build_dir": ".",
-    "local_output_dir": "./output"
+    "local_output_dir": "./output",
+    "remote_laser_control": "/home/realityshapers/Desktop/scanner_project/simple_laser_control"
 }
