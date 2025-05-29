@@ -27,7 +27,7 @@ void MeshCreator::computeNormals(
     std::cout << "Giriş nokta bulutu boyutu: " << cloud->points.size() << std::endl;
     
     // Normal tahmini için k-komşu sayısı
-    int k = 15;  // Bardak için optimize edilmiş değer
+    int k = 20;  // Bardak için optimize edilmiş değer
     
     // Normal tahmini için nesne oluştur
     pcl::NormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal> normalEstimation;
@@ -40,6 +40,7 @@ void MeshCreator::computeNormals(
     // Normal tahmini parametrelerini ayarla
     normalEstimation.setInputCloud(cloud);
     normalEstimation.setSearchMethod(tree);
+    normalEstimation.setNumberOfThreads(8);
     normalEstimation.setKSearch(k);
     normalEstimation.setViewPoint(0, 0, 0);  // Bakış noktasını ayarla
     normalEstimation.compute(*normals);
@@ -106,13 +107,15 @@ pcl::PolygonMesh MeshCreator::createMesh(pcl::PointCloud<pcl::PointXYZRGB>::Ptr 
             pcl::Poisson<pcl::PointXYZRGBNormal> poisson;
             
             poisson.setInputCloud(cloudWithNormals);
-            poisson.setDepth(12);  // Kullanıcı tanımlı derinlik değeri
+            poisson.setDepth(10);  // Kullanıcı tanımlı derinlik değeri
             poisson.setSolverDivide(8);
             poisson.setIsoDivide(8);
-            poisson.setSamplesPerNode(1.0);  // Daha esnek oluşturma
-            poisson.setConfidence(false);
+            poisson.setSamplesPerNode(2.5);  // Daha esnek oluşturma
+            poisson.setConfidence(true);
             poisson.setManifold(true);  // Manifold kısıtlamasını kaldır
             poisson.setOutputPolygons(true);
+            poisson.setMinDepth(7);
+            poisson.setScale(1.2);
             
             std::cout << "Poisson mesh oluşturuluyor..." << std::endl;
             poisson.reconstruct(resultMesh);

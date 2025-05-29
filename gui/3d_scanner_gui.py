@@ -14,6 +14,38 @@ import time
 import subprocess
 from datetime import datetime
 import json
+import shutil
+import tempfile
+import webbrowser
+import sys
+import requests
+from urllib.parse import quote
+
+# Try to import 3D visualization libraries
+try:
+    import matplotlib
+    matplotlib.use('TkAgg')  # Use TkAgg backend for better tkinter integration
+    import matplotlib.pyplot as plt
+    from mpl_toolkits.mplot3d import Axes3D
+    import numpy as np
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+
+# Try to import Plotly for hardware-accelerated 3D rendering
+try:
+    import plotly.graph_objects as go
+    import plotly.offline as pyo
+    PLOTLY_AVAILABLE = True
+except ImportError:
+    PLOTLY_AVAILABLE = False
+
+# Try to import requests for file upload
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
 
 class ScannerGUI:
     def __init__(self, root):
@@ -25,6 +57,9 @@ class ScannerGUI:
         # SSH connection variables
         self.ssh_client = None
         
+        # Shutdown flag to prevent operations during shutdown
+        self.shutting_down = False
+        
         # Status variables (matching bash script)
         self.connection_status = False
         self.scan_status = False
@@ -32,6 +67,10 @@ class ScannerGUI:
         self.download_status = False
         self.model_status = False
         self.model_active = False  # New: indicates model creation is in progress
+        self.laser_status = False
+        self.led_status = False
+        self.user_stopped_scan = False
+        self.viewer_active = False  # New: indicates 3D viewer is open
         
         # Configuration (matching bash script paths)
         self.config = {
@@ -51,7 +90,8 @@ class ScannerGUI:
             "local_laser_dir": "./scan/laser",
             "local_color_dir": "./scan/color",
             "local_build_dir": ".",
-            "local_output_dir": "./output"
+            "local_output_dir": "./output",
+            "remote_laser_control": "/home/realityshapers/Desktop/scanner_project/simple_laser_control",
         }
         
         self.setup_ui()
@@ -68,6 +108,8 @@ class ScannerGUI:
         
         # Status display
         self.setup_status_display(main_frame)
+
+        self.setup_laser_control(main_frame)
         
         # Main workflow buttons
         self.setup_workflow_buttons(main_frame)
@@ -108,7 +150,8 @@ class ScannerGUI:
         status_items = [
             ("1. CONNECTION", "connection_status"),
             ("2. SCAN & DOWNLOAD", "scan_status"),
-            ("3. 3D MODEL", "model_status")
+            ("3. 3D MODEL", "model_status"),
+            ("4. VIEW 3D", "view_status")
         ]
         
         for i, (label, status_key) in enumerate(status_items):
@@ -121,6 +164,187 @@ class ScannerGUI:
             self.status_labels[status_key] = status_var
             status_label = ttk.Label(status_grid, textvariable=status_var, font=("Arial", 10))
             status_label.grid(row=row, column=col+1, sticky=tk.W, padx=5, pady=2)
+
+    def setup_laser_control(self, parent):
+        """Setup laser control panel"""
+        laser_frame = ttk.LabelFrame(parent, text="TEST COMPONENTS", padding=10)
+        laser_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Status indicators
+        status_frame = ttk.Frame(laser_frame)
+        status_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Laser status
+        self.laser_status_var = tk.StringVar(value="❌ KAPALI")
+        ttk.Label(status_frame, text="Laser:", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=(0, 5))
+        self.laser_status_label = ttk.Label(status_frame, textvariable=self.laser_status_var, 
+                                        font=("Arial", 10, "bold"), foreground="red")
+        self.laser_status_label.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # LED status
+        self.led_status_var = tk.StringVar(value="❌ KAPALI")
+        ttk.Label(status_frame, text="LED:", font=("Arial", 10, "bold")).pack(side=tk.LEFT, padx=(0, 5))
+        self.led_status_label = ttk.Label(status_frame, textvariable=self.led_status_var, 
+                                        font=("Arial", 10, "bold"), foreground="red")
+        self.led_status_label.pack(side=tk.LEFT, padx=(0, 20))
+        
+        # Control buttons
+        control_frame = ttk.Frame(laser_frame)
+        control_frame.pack(fill=tk.X)
+        
+        # Laser buttons
+        laser_btn_frame = ttk.Frame(control_frame)
+        laser_btn_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.laser_on_btn = ttk.Button(laser_btn_frame, text="LASER AÇ", 
+                                    command=self.laser_on, width=15)
+        self.laser_on_btn.pack(side=tk.LEFT, padx=2)
+        
+        self.laser_off_btn = ttk.Button(laser_btn_frame, text="LASER KAPAT", 
+                                    command=self.laser_off, width=15)
+        self.laser_off_btn.pack(side=tk.LEFT, padx=2)
+        
+        # LED buttons
+        led_btn_frame = ttk.Frame(control_frame)
+        led_btn_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.led_on_btn = ttk.Button(led_btn_frame, text="LED AÇ", 
+                                    command=self.led_on, width=15)
+        self.led_on_btn.pack(side=tk.LEFT, padx=2)
+        
+        self.led_off_btn = ttk.Button(led_btn_frame, text="LED KAPAT", 
+                                    command=self.led_off, width=15)
+        self.led_off_btn.pack(side=tk.LEFT, padx=2)
+
+        motor_btn_frame = ttk.Frame(control_frame)
+        motor_btn_frame.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.motor_rotation_btn = ttk.Button(motor_btn_frame, text="TEST MOTOR", 
+                                        command=self.motor_full_rotation, width=12)
+        self.motor_rotation_btn.pack(side=tk.LEFT, padx=2)
+
+        self.motor_off_btn = ttk.Button(motor_btn_frame, text="MOTOR OFF", 
+                                    command=self.motor_off, width=12)
+        self.motor_off_btn.pack(side=tk.LEFT, padx=2)
+
+    def motor_full_rotation(self):
+        """Full 360 degree rotation"""
+        if self.execute_laser_command("motor_rotation"):
+            self.log_message("🔄 Motor tam dönüş tamamlandı")
+
+    def motor_off(self):
+        """Turn motor off"""
+        if self.execute_laser_command("motor_off"):
+            self.log_message("⏹️ Motor kapatıldı")
+
+# 4. Laser control metodlarını ekleyin:
+    def execute_laser_command(self, command):
+        """Execute laser control command on Raspberry Pi"""
+        if not self.connection_status:
+            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            return False
+        
+        try:
+            cmd = f"cd {self.config['remote_scanner_project']} && sudo ./{self.config['remote_laser_control'].split('/')[-1]} {command}"
+            stdin, stdout, stderr = self.ssh_client.exec_command(cmd)
+            result = stdout.read().decode().strip()
+            error = stderr.read().decode().strip()
+            
+            if error:
+                self.log_message(f"❌ Laser command error: {error}")
+                return False
+            
+            self.log_message(f"🔧 Laser command '{command}': {result}")
+            return True
+            
+        except Exception as e:
+            self.log_message(f"❌ Laser command failed: {str(e)}")
+            return False
+
+    def laser_on(self):
+        """Turn laser ON"""
+        if self.execute_laser_command("laser_on"):
+            self.laser_status = True
+            self.laser_status_var.set("✅ AÇIK")
+            self.laser_status_label.config(foreground="green")
+            self.log_message("🔴 LASER AÇILDI")
+
+    def laser_off(self):
+        """Turn laser OFF"""
+        if self.execute_laser_command("laser_off"):
+            self.laser_status = False
+            self.laser_status_var.set("❌ KAPALI")
+            self.laser_status_label.config(foreground="red")
+            self.log_message("⚫ LASER KAPATILDI")
+
+    def led_on(self):
+        """Turn LED ON"""
+        if self.execute_laser_command("led_on"):
+            self.led_status = True
+            self.led_status_var.set("✅ AÇIK")
+            self.led_status_label.config(foreground="green")
+            self.log_message("💡 LED AÇILDI")
+
+    def led_off(self):
+        """Turn LED OFF"""
+        if self.execute_laser_command("led_off"):
+            self.led_status = False
+            self.led_status_var.set("❌ KAPALI")
+            self.led_status_label.config(foreground="red")
+            self.log_message("🔲 LED KAPATILDI")
+
+    def emergency_stop(self):
+        """Emergency stop - turn everything OFF"""
+        if self.execute_laser_command("all_off"):
+            self.laser_status = False
+            self.led_status = False
+            self.laser_status_var.set("❌ KAPALI")
+            self.led_status_var.set("❌ KAPALI")
+            self.laser_status_label.config(foreground="red")
+            self.led_status_label.config(foreground="red")
+            self.log_message("🚨 ACİL DURDURMA - HEPSİ KAPATILDI")
+
+    def update_laser_status(self):
+        """Update laser and LED status from Raspberry Pi"""
+        if not self.connection_status:
+            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            return
+        
+        try:
+            cmd = f"cd {self.config['remote_scanner_project']} && sudo ./{self.config['remote_laser_control'].split('/')[-1]} status"
+            stdin, stdout, stderr = self.ssh_client.exec_command(cmd)
+            result = stdout.read().decode().strip()
+            
+            if "LASER:" in result and "LED:" in result:
+                # Parse result: "LASER:1,LED:0"
+                parts = result.split(",")
+                laser_state = parts[0].split(":")[1] == "1"
+                led_state = parts[1].split(":")[1] == "1"
+                
+                # Update laser status
+                self.laser_status = laser_state
+                if laser_state:
+                    self.laser_status_var.set("✅ AÇIK")
+                    self.laser_status_label.config(foreground="green")
+                else:
+                    self.laser_status_var.set("❌ KAPALI")
+                    self.laser_status_label.config(foreground="red")
+                
+                # Update LED status
+                self.led_status = led_state
+                if led_state:
+                    self.led_status_var.set("✅ AÇIK")
+                    self.led_status_label.config(foreground="green")
+                else:
+                    self.led_status_var.set("❌ KAPALI")
+                    self.led_status_label.config(foreground="red")
+                
+                self.log_message(f"🔄 Durum güncellendi - Laser: {'AÇIK' if laser_state else 'KAPALI'}, LED: {'AÇIK' if led_state else 'KAPALI'}")
+            else:
+                self.log_message("⚠️ Durum okunamadı")
+                
+        except Exception as e:
+            self.log_message(f"❌ Durum okuma hatası: {str(e)}")
         
     def setup_workflow_buttons(self, parent):
         workflow_frame = ttk.LabelFrame(parent, text="MAIN WORKFLOW", padding=10)
@@ -139,6 +363,12 @@ class ScannerGUI:
         
         self.model_btn = ttk.Button(button_grid, text="3. CREATE MODEL", command=self.create_3d_model, width=15, state=tk.DISABLED)
         self.model_btn.grid(row=0, column=2, padx=5, pady=5)
+        
+        self.view_btn = ttk.Button(button_grid, text="4. VIEW 3D", command=self.view_3d_model, width=15, state=tk.DISABLED)
+        self.view_btn.grid(row=0, column=3, padx=5, pady=5)
+
+        self.stop_btn = ttk.Button(button_grid, text="🛑 STOP SCAN", command=self.stop_scanner, width=15, state=tk.DISABLED)
+        self.stop_btn.grid(row=0, column=4, padx=5, pady=5)
         
         # Additional control buttons
         control_frame = ttk.Frame(workflow_frame)
@@ -171,6 +401,63 @@ class ScannerGUI:
         
         self.log_text = scrolledtext.ScrolledText(log_frame, height=15, width=80, font=("Consolas", 9))
         self.log_text.pack(fill=tk.BOTH, expand=True)
+
+        
+
+    def stop_scanner(self):
+        """Send SIGINT (Ctrl+C) to running scanner process"""
+        if not self.connection_status:
+            messagebox.showwarning("Not Connected", "Please connect to Raspberry Pi first!")
+            return
+        
+        try:
+            # Set flag to prevent error messages
+            self.user_stopped_scan = True
+            
+            self.log_message("🛑 SCANNER DURDURMA KOMUTU GÖNDERİLİYOR...")
+            
+            # 1. First try graceful stop
+            kill_cmd = "sudo pkill -SIGINT scanner_control"
+            stdin, stdout, stderr = self.ssh_client.exec_command(kill_cmd)
+            stdout.read()
+            
+            # 2. Wait a moment for graceful shutdown
+            time.sleep(1)
+            
+            # 3. Check if still running and force kill if necessary
+            check_cmd = "pgrep scanner_control"
+            stdin, stdout, stderr = self.ssh_client.exec_command(check_cmd)
+            still_running = stdout.read().decode().strip()
+            
+            if still_running:
+                self.log_message("   Zorla durdurma...")
+                force_kill_cmd = "sudo pkill -SIGKILL scanner_control"
+                stdin, stdout, stderr = self.ssh_client.exec_command(force_kill_cmd)
+                stdout.read()
+            
+            # 4. Clean up camera processes
+            cleanup_cmd = "sudo pkill -9 libcamera 2>/dev/null; sudo pkill -9 timeout 2>/dev/null"
+            stdin, stdout, stderr = self.ssh_client.exec_command(cleanup_cmd)
+            stdout.read()
+
+            # 5. SAFETY: Turn off motor and lights (YENİ)
+            self.log_message("   Güvenlik: Motor ve ışıklar kapatılıyor...")
+            safety_cmd = f"cd {self.config['remote_scanner_project']} && sudo ./simple_laser_control motor_off"
+            stdin, stdout, stderr = self.ssh_client.exec_command(safety_cmd)
+            stdout.read()
+            
+            self.log_message("✅ SCANNER DURDURULDU")
+            
+            # Update UI immediately
+            self.scanning_active = False
+            self.progress_var.set("Tarama durduruldu")
+            self.progress_bar.stop()
+            self.update_status_display()
+            
+            # Don't show success message popup - just log it
+            
+        except Exception as e:
+            self.log_message(f"❌ Stop signal failed: {str(e)}")
         
         
     def update_status_display(self):
@@ -194,21 +481,29 @@ class ScannerGUI:
             "model_status": ("✅ Created" if self.model_status else 
                             ("🔄 Active" if self.model_active else "⏸️ Pending"), 
                             "green" if self.model_status else 
-                            ("blue" if self.model_active else "orange"))
+                            ("blue" if self.model_active else "orange")),
+            "view_status": ("🔄 Viewer Open" if self.viewer_active else 
+                           ("✅ Available" if self.check_model_files_exist() else "❌ No Model"), 
+                           "blue" if self.viewer_active else 
+                           ("green" if self.check_model_files_exist() else "red"))
         }
         
         for status_key, (text, color) in statuses.items():
             if status_key in self.status_labels:
                 self.status_labels[status_key].set(text)
         
-        # Update button states
-        self.scan_btn.config(state=tk.NORMAL if self.connection_status else tk.DISABLED)
-        # Enable CREATE MODEL if photos downloaded OR if local photos exist
-        self.model_btn.config(state=tk.NORMAL if (self.download_status or local_photos_exist) else tk.DISABLED)
-        
         # Update connect button text
         self.connect_btn.config(text="✅ CONNECTED" if self.connection_status else "1. CONNECT")
         
+        # Update VIEW 3D button text based on viewer status
+        if self.viewer_active:
+            self.view_btn.config(text="🌐 CLOSE VIEWER")
+        else:
+            self.view_btn.config(text="4. VIEW 3D")
+        
+        # Update button states using the new centralized method
+        self.update_button_states()
+    
     def check_local_photos_exist(self):
         """Check if local photos exist for both laser and color"""
         try:
@@ -231,32 +526,63 @@ class ScannerGUI:
         except Exception:
             return False
     
+    def check_model_files_exist(self):
+        """Check if 3D model files exist for viewing"""
+        try:
+            # Only check GUI's configured output directory
+            output_dir = self.config['local_output_dir']
+            
+            if os.path.exists(output_dir):
+                # Look for OBJ files (primary format)
+                obj_files = [f for f in os.listdir(output_dir) 
+                           if f.lower().endswith('.obj')]
+                return len(obj_files) > 0
+            
+            return False
+            
+        except Exception:
+            return False
+    
     def log_message(self, message, level="INFO"):
         """Add message to log with timestamp and color coding"""
-        timestamp = datetime.now().strftime("%H:%M:%S")
-        
-        # Color coding based on message content
-        if "✅" in message or "SUCCESS" in message.upper():
-            prefix = "✅"
-        elif "❌" in message or "ERROR" in message.upper() or "FAILED" in message.upper():
-            prefix = "❌"
-        elif "⚠️" in message or "WARNING" in message.upper():
-            prefix = "⚠️"
-        elif "🔄" in message or "PROCESSING" in message.upper():
-            prefix = "🔄"
-        elif "📥" in message or "DOWNLOAD" in message.upper():
-            prefix = "📥"
-        elif "🔴" in message or "SCAN" in message.upper():
-            prefix = "🔴"
-        elif "🏗️" in message or "BUILD" in message.upper():
-            prefix = "🏗️"
-        else:
-            prefix = "ℹ️"
-        
-        formatted_message = f"[{timestamp}] {prefix} {message}\n"
-        self.log_text.insert(tk.END, formatted_message)
-        self.log_text.see(tk.END)
-        self.root.update_idletasks()
+        # Don't log messages if we're shutting down
+        if self.shutting_down:
+            return
+            
+        try:
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            
+            # Color coding based on message content
+            if "✅" in message or "SUCCESS" in message.upper():
+                prefix = "✅"
+            elif "❌" in message or "ERROR" in message.upper() or "FAILED" in message.upper():
+                prefix = "❌"
+            elif "⚠️" in message or "WARNING" in message.upper():
+                prefix = "⚠️"
+            elif "🔄" in message or "PROCESSING" in message.upper():
+                prefix = "🔄"
+            elif "📥" in message or "DOWNLOAD" in message.upper():
+                prefix = "📥"
+            elif "🔴" in message or "SCAN" in message.upper():
+                prefix = "🔴"
+            elif "🏗️" in message or "BUILD" in message.upper():
+                prefix = "🏗️"
+            else:
+                prefix = "ℹ️"
+            
+            formatted_message = f"[{timestamp}] {prefix} {message}\n"
+            
+            # Check if log_text widget still exists and is valid
+            if hasattr(self, 'log_text') and self.log_text.winfo_exists():
+                self.log_text.insert(tk.END, formatted_message)
+                self.log_text.see(tk.END)
+                self.root.update_idletasks()
+        except (tk.TclError, AttributeError):
+            # GUI has been destroyed or widget is invalid, just print to console
+            print(f"[{datetime.now().strftime('%H:%M:%S')}] {message}")
+        except Exception:
+            # Any other error, silently ignore during shutdown
+            pass
     
     def connect_to_pi(self):
         """Connect to Raspberry Pi via SSH"""
@@ -420,11 +746,12 @@ class ScannerGUI:
         def scan_thread():
             try:
                 # Disable all buttons except FOLDERS and STATUS
-                self.disable_buttons_during_scan()
+                self.disable_buttons_during_operation("scan")
                 
                 # Set scanning as active
                 self.scanning_active = True
                 self.update_status_display()
+                self.stop_btn.config(state=tk.NORMAL)
                 
                 self.progress_bar.start()
                 self.progress_var.set("Deleting old photos and starting scan...")
@@ -461,7 +788,7 @@ class ScannerGUI:
                 self.log_message("   Running scanner program...")
                 self.log_message("   (This may take several minutes)")
                 
-                scan_cmd = f"cd {self.config['remote_scanner_project']} && sudo ./test"
+                scan_cmd = f"cd {self.config['remote_scanner_project']} && sudo ./scanner_control"
                 stdin, stdout, stderr = self.ssh_client.exec_command(scan_cmd)
                 
                 # Read output in real-time
@@ -486,16 +813,25 @@ class ScannerGUI:
                     raise Exception(f"Scanner failed with exit code {exit_code}: {error_output}")
                     
             except Exception as e:
-                self.log_message(f"❌ Scanning failed: {str(e)}")
-                self.progress_var.set("Scanning failed")
-                messagebox.showerror("Scan Error", f"Laser scanning failed:\n{str(e)}")
+                if getattr(self, 'user_stopped_scan', False):
+                    # User requested stop - not an error
+                    self.log_message("⏹️ TARAMA KULLANICI TARAFINDAN DURDURULDU")
+                    self.progress_var.set("Tarama durduruldu")
+                    self.user_stopped_scan = False  # Reset flag
+                else:
+                    # Real error
+                    self.log_message(f"❌ Scanning failed: {str(e)}")
+                    self.progress_var.set("Scanning failed")
+                    messagebox.showerror("Scan Error", f"Laser scanning failed:\n{str(e)}")
             finally:
-                # Set scanning as inactive
-                self.scanning_active = False
-                self.progress_bar.stop()
-                # Re-enable buttons after scanning completes
-                self.enable_buttons_after_scan()
-                self.update_status_display()
+                 # Set scanning as inactive
+                 self.scanning_active = False
+                 self.progress_bar.stop()
+                 # Reset stop flag
+                 self.user_stopped_scan = False  # EKLE
+                 # Re-enable buttons after scanning completes
+                 self.enable_buttons_after_operation("scan")
+                 self.update_status_display()
         
         threading.Thread(target=scan_thread, daemon=True).start()
     
@@ -651,7 +987,7 @@ class ScannerGUI:
         def model_thread():
             try:
                 # Disable all buttons except FOLDERS and STATUS
-                self.disable_buttons_during_scan()
+                self.disable_buttons_during_operation("model")
                 
                 # Set model creation as active
                 self.model_active = True
@@ -770,10 +1106,414 @@ class ScannerGUI:
                 self.model_active = False
                 self.progress_bar.stop()
                 # Re-enable buttons after model creation completes
-                self.enable_buttons_after_scan()
+                self.enable_buttons_after_operation("model")
                 self.update_status_display()
         
         threading.Thread(target=model_thread, daemon=True).start()
+    
+    def view_3d_model(self):
+        """View the created 3D model using online 3D viewer service (no embedded fallback)"""
+        # If viewer is active, close it
+        if self.viewer_active:
+            self.close_web_viewer()
+            return
+        
+        if not self.check_model_files_exist():
+            messagebox.showwarning("No Model Found", "Please create a 3D model first!")
+            return
+        
+        def open_web_viewer_thread():
+            try:
+                self.viewer_active = True
+                self.root.after(0, self.update_status_display)
+                self.log_message("🌐 OPENING WEB-BASED 3D MODEL VIEWER")
+                obj_file_path = None
+                output_dir = self.config['local_output_dir']
+                self.log_message(f"   Searching for models in: {os.path.abspath(output_dir)}")
+                if os.path.exists(output_dir):
+                    obj_files = [f for f in os.listdir(output_dir) if f.lower().endswith('.obj')]
+                    if obj_files:
+                        obj_file_path = os.path.join(output_dir, obj_files[0])
+                        self.log_message(f"   Found model: {obj_files[0]}")
+                    else:
+                        self.log_message(f"   No OBJ files found in output directory")
+                else:
+                    self.log_message(f"   Output directory does not exist: {output_dir}")
+                if not obj_file_path:
+                    self.viewer_active = False
+                    self.root.after(0, self.update_status_display)
+                    self.root.after(0, lambda: messagebox.showerror("Model Error", f"No OBJ file found in GUI output directory: {output_dir}"))
+                    return
+                file_size = os.path.getsize(obj_file_path)
+                size_mb = file_size / (1024 * 1024)
+                self.log_message(f"   File size: {size_mb:.1f} MB")
+                if not REQUESTS_AVAILABLE:
+                    raise Exception("Python 'requests' module is not available for upload.")
+                self.log_message("   Uploading model to temporary hosting...")
+                with open(obj_file_path, 'rb') as f:
+                    files = {'file': f}
+                    response = requests.post('https://file.io/', files=files)
+                if response.status_code == 200:
+                    result = response.json()
+                    if result.get('success'):
+                        file_url = result.get('link')
+                        self.log_message(f"   Model uploaded successfully: {file_url}")
+                        viewer_url = f"https://3dviewer.net/#model={quote(file_url)}"
+                        webbrowser.open(viewer_url)
+                        self.log_message("✅ 3D MODEL VIEWER OPENED WITH AUTOMATIC LOADING")
+                        self.log_message("   Model will load automatically in browser")
+                        return
+                    else:
+                        raise Exception("File upload failed: " + str(result))
+                else:
+                    raise Exception(f"Upload failed with status {response.status_code}")
+            except Exception as e:
+                self.viewer_active = False
+                self.root.after(0, self.update_status_display)
+                error_msg = f"Failed to open web viewer (no embedded fallback):\n{str(e)}"
+                self.log_message(f"❌ Web viewer failed: {str(e)}")
+                self.root.after(0, lambda: messagebox.showerror("Viewer Error", error_msg))
+        threading.Thread(target=open_web_viewer_thread, daemon=True).start()
+        self.log_message("🔄 Preparing web-based 3D viewer...")
+    
+    def close_web_viewer(self):
+        """Close the web-based 3D viewer and clean up temporary files"""
+        try:
+            self.log_message("🔲 Closing web-based 3D viewer...")
+            
+            # Clean up temporary HTML file if it exists
+            if hasattr(self, 'temp_html_path') and os.path.exists(self.temp_html_path):
+                try:
+                    os.remove(self.temp_html_path)
+                    self.log_message("   Temporary HTML file cleaned up")
+                except:
+                    pass
+                delattr(self, 'temp_html_path')
+            
+            # Reset viewer state
+            self.viewer_active = False
+            self.update_status_display()
+            
+            self.log_message("✅ Web viewer closed successfully")
+            
+        except Exception as e:
+            self.log_message(f"⚠️ Error closing web viewer: {str(e)}")
+            # Force reset viewer state even if there's an error
+            self.viewer_active = False
+            self.update_status_display()
+    
+    def parse_obj_file(self, obj_file_path):
+        """Parse OBJ file and extract vertices and faces"""
+        vertices = []
+        faces = []
+        
+        try:
+            with open(obj_file_path, 'r') as file:
+                for line in file:
+                    line = line.strip()
+                    if line.startswith('v '):  # Vertex
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            x, y, z = float(parts[1]), float(parts[2]), float(parts[3])
+                            vertices.append([x, y, z])
+                    elif line.startswith('f '):  # Face
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            # Handle faces with texture/normal indices (v/vt/vn format)
+                            face_vertices = []
+                            for part in parts[1:]:
+                                vertex_index = int(part.split('/')[0]) - 1  # OBJ indices start at 1
+                                face_vertices.append(vertex_index)
+                            faces.append(face_vertices)
+            
+            return np.array(vertices), faces
+            
+        except Exception as e:
+            raise Exception(f"Failed to parse OBJ file: {str(e)}")
+    
+    def create_3d_visualization(self, vertices, faces, obj_file_path):
+        """Create and display 3D visualization using matplotlib"""
+        try:
+            self.log_message("🎨 Creating 3D visualization in main thread...")
+            
+            # Disable matplotlib toolbar
+            import matplotlib
+            matplotlib.rcParams['toolbar'] = 'None'
+            
+            # Create figure with dark background
+            fig = plt.figure(figsize=(12, 9), facecolor='black')
+            ax = fig.add_subplot(111, projection='3d', facecolor='black')
+            
+            # Set title with white text
+            model_name = os.path.basename(obj_file_path)
+            fig.suptitle(f'3D Model Viewer - {model_name}', fontsize=14, fontweight='bold', color='white')
+            
+            # Hide axes, grid, and labels for clean look
+            ax.set_axis_off()
+            
+            # Set dark background
+            ax.xaxis.pane.fill = False
+            ax.yaxis.pane.fill = False
+            ax.zaxis.pane.fill = False
+            ax.xaxis.pane.set_edgecolor('black')
+            ax.yaxis.pane.set_edgecolor('black')
+            ax.zaxis.pane.set_edgecolor('black')
+            ax.grid(False)
+            
+            # SIMPLE ROTATION FIX: Rotate 90 degrees to make object stand vertically
+            # Rotate around X-axis to make the object stand upright (Y becomes Z)
+            rotation_matrix = np.array([
+                [1, 0, 0],
+                [0, 0, -1],
+                [0, 1, 0]
+            ])
+            vertices = np.dot(vertices, rotation_matrix.T)
+            self.log_message("   Applied 90° rotation to make object stand vertically")
+            
+            # Parse vertex colors from MTL file if available
+            vertex_colors = self.parse_vertex_colors(obj_file_path)
+            
+            # Plot vertices as points with colors
+            if len(vertices) > 0:
+                if vertex_colors is not None and len(vertex_colors) == len(vertices):
+                    # Use actual vertex colors
+                    ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], 
+                              c=vertex_colors, s=0.5, alpha=0.8)
+                else:
+                    # Use default blue color for vertices
+                    ax.scatter(vertices[:, 0], vertices[:, 1], vertices[:, 2], 
+                              c='lightblue', s=0.5, alpha=0.6)
+            
+            # Plot faces with proper coloring and wireframe
+            if len(faces) > 0:
+                self.log_message(f"   Rendering {len(faces)} faces with wireframe...")
+                
+                # Limit faces for performance but use more than before
+                max_faces = min(5000, len(faces))
+                
+                # First pass: Draw filled faces
+                for i, face in enumerate(faces[:max_faces]):
+                    if len(face) >= 3:
+                        # Create face polygon
+                        face_vertices = vertices[face]
+                        
+                        # Use face colors if available, otherwise use a subtle color
+                        if vertex_colors is not None and len(vertex_colors) > max(face):
+                            # Average color of face vertices
+                            face_color = np.mean([vertex_colors[j] for j in face if j < len(vertex_colors)], axis=0)
+                            color = face_color[:3] if len(face_color) >= 3 else [0.7, 0.7, 0.9]
+                        else:
+                            # Use a subtle blue-gray color
+                            color = [0.6, 0.7, 0.9]
+                        
+                        # Draw filled triangular face if it's a triangle
+                        if len(face) == 3:
+                            # Create a triangular surface
+                            from mpl_toolkits.mplot3d.art3d import Poly3DCollection
+                            triangle = [face_vertices]
+                            poly = Poly3DCollection(triangle, alpha=0.6, facecolor=color, edgecolor='none')
+                            ax.add_collection3d(poly)
+                
+                # Second pass: Draw wireframe edges
+                for i, face in enumerate(faces[:max_faces]):
+                    if len(face) >= 3:
+                        # Create face polygon for wireframe
+                        face_vertices = vertices[face]
+                        
+                        # Close the polygon by adding first vertex at the end
+                        face_vertices = np.vstack([face_vertices, face_vertices[0]])
+                        
+                        # Draw wireframe with subtle white/gray lines
+                        ax.plot(face_vertices[:, 0], face_vertices[:, 1], face_vertices[:, 2], 
+                               color='white', alpha=0.3, linewidth=0.2)
+                
+                if len(faces) > max_faces:
+                    self.log_message(f"   (Showing first {max_faces} of {len(faces)} faces for performance)")
+            
+            # Set equal aspect ratio and center the model
+            max_range = np.array([vertices[:, 0].max() - vertices[:, 0].min(),
+                                vertices[:, 1].max() - vertices[:, 1].min(),
+                                vertices[:, 2].max() - vertices[:, 2].min()]).max() / 2.0
+            
+            mid_x = (vertices[:, 0].max() + vertices[:, 0].min()) * 0.5
+            mid_y = (vertices[:, 1].max() + vertices[:, 1].min()) * 0.5
+            mid_z = (vertices[:, 2].max() + vertices[:, 2].min()) * 0.5
+            
+            ax.set_xlim(mid_x - max_range, mid_x + max_range)
+            ax.set_ylim(mid_y - max_range, mid_y + max_range)
+            ax.set_zlim(mid_z - max_range, mid_z + max_range)
+            
+            # Add model info text in top-left corner with white text
+            info_text = f"Vertices: {len(vertices):,}\nFaces: {len(faces):,}\nFile: {model_name}"
+            ax.text2D(0.02, 0.98, info_text, transform=ax.transAxes, fontsize=10,
+                     verticalalignment='top', color='white',
+                     bbox=dict(boxstyle='round', facecolor='black', alpha=0.7, edgecolor='white'))
+            
+            # Add interaction instructions in bottom-left corner with white text
+            instructions = "Mouse: Rotate view (constrained)\nScroll: Zoom\nRight-click: Pan"
+            ax.text2D(0.02, 0.02, instructions, transform=ax.transAxes, fontsize=9,
+                     verticalalignment='bottom', color='white',
+                     bbox=dict(boxstyle='round', facecolor='black', alpha=0.7, edgecolor='white'))
+            
+            # Set initial viewing angle for better presentation of vertical object
+            # Elevation: 15 degrees (slightly looking up)
+            # Azimuth: 30 degrees (rotated view for better perspective)
+            ax.view_init(elev=15, azim=30)
+            
+            # ROTATION CONSTRAINTS: Limit rotation angles
+            # Azimuth: 360° (full rotation around vertical axis)
+            # Elevation: 0° to 180° (prevent upside-down viewing)
+            
+            def constrain_rotation():
+                """Constrain the viewing angles to realistic limits"""
+                elev, azim = ax.elev, ax.azim
+                
+                # Constrain elevation to 0-180 degrees (prevent upside-down)
+                constrained = False
+                if elev < 0:
+                    elev = 0
+                    constrained = True
+                elif elev > 180:
+                    elev = 180
+                    constrained = True
+                
+                # Azimuth can be 0-360 degrees (full rotation around vertical axis)
+                # Normalize azimuth to 0-360 range
+                azim = azim % 360
+                
+                # Only apply constraints if needed (to avoid unnecessary redraws)
+                if constrained:
+                    ax.view_init(elev=elev, azim=azim)
+                    return True
+                return False
+            
+            # Use a timer-based approach for smooth, live rotation with constraints
+            constraint_timer = None
+            
+            def on_motion(event):
+                """Handle mouse motion - let matplotlib handle rotation naturally"""
+                nonlocal constraint_timer
+                
+                # Cancel previous timer if it exists
+                if constraint_timer is not None:
+                    constraint_timer.stop()
+                
+                # Set a short timer to check constraints after motion stops
+                # This allows smooth rotation while still enforcing limits
+                def check_constraints():
+                    if constrain_rotation():
+                        fig.canvas.draw_idle()
+                
+                # Use matplotlib's timer for non-blocking constraint checking
+                constraint_timer = fig.canvas.new_timer(interval=50)  # 50ms delay
+                constraint_timer.single_shot = True
+                constraint_timer.add_callback(check_constraints)
+                constraint_timer.start()
+            
+            # Connect the motion event
+            fig.canvas.mpl_connect('motion_notify_event', on_motion)
+            
+            # Apply constraints immediately when user finishes dragging
+            def on_button_release(event):
+                """Handle button release with immediate constraint check"""
+                if event.inaxes == ax:
+                    if constrain_rotation():
+                        fig.canvas.draw_idle()
+            
+            fig.canvas.mpl_connect('button_release_event', on_button_release)
+            
+            # Also add a scroll event handler to maintain constraints during zoom
+            def on_scroll(event):
+                """Handle scroll events and maintain constraints"""
+                if event.inaxes == ax:
+                    # Small delay to let zoom complete, then check constraints
+                    def check_constraints_after_zoom():
+                        if constrain_rotation():
+                            fig.canvas.draw_idle()
+                    
+                    zoom_timer = fig.canvas.new_timer(interval=100)
+                    zoom_timer.single_shot = True
+                    zoom_timer.add_callback(check_constraints_after_zoom)
+                    zoom_timer.start()
+            
+            fig.canvas.mpl_connect('scroll_event', on_scroll)
+            
+            # Set up window close event handler to reset viewer flag
+            def on_viewer_close(event):
+                self.viewer_active = False
+                if not self.shutting_down:
+                    try:
+                        self.update_status_display()
+                        self.log_message("🔲 3D viewer window closed")
+                    except:
+                        pass
+            
+            # Connect the close event
+            fig.canvas.mpl_connect('close_event', on_viewer_close)
+            
+            # Show the plot with tight layout
+            plt.tight_layout()
+            plt.show()
+            
+            self.log_message("✅ 3D MODEL VIEWER OPENED SUCCESSFULLY")
+            self.log_message("   Rotation constraints: Vertical 360°, Horizontal 0-180°")
+            
+        except Exception as e:
+            # Reset viewer flag on error
+            self.viewer_active = False
+            self.update_status_display()
+            self.log_message(f"❌ 3D visualization failed: {str(e)}")
+            raise Exception(f"Failed to create 3D visualization: {str(e)}")
+    
+    def parse_vertex_colors(self, obj_file_path):
+        """Parse vertex colors from OBJ file or associated texture"""
+        try:
+            # Look for vertex colors in OBJ file (some OBJ files have vertex colors)
+            vertex_colors = []
+            
+            with open(obj_file_path, 'r') as file:
+                for line in file:
+                    line = line.strip()
+                    if line.startswith('v '):  # Vertex with possible color
+                        parts = line.split()
+                        if len(parts) >= 7:  # x y z r g b format
+                            r, g, b = float(parts[4]), float(parts[5]), float(parts[6])
+                            vertex_colors.append([r, g, b])
+                        elif len(parts) >= 4:  # Just x y z, no color
+                            vertex_colors.append([0.7, 0.7, 0.9])  # Default blue-gray
+            
+            if len(vertex_colors) > 0:
+                return np.array(vertex_colors)
+            
+            # If no vertex colors found, try to load from texture/MTL file
+            mtl_file = obj_file_path.replace('.obj', '.mtl')
+            if os.path.exists(mtl_file):
+                return self.parse_mtl_colors(mtl_file)
+            
+            return None
+            
+        except Exception as e:
+            self.log_message(f"   Could not parse vertex colors: {str(e)}")
+            return None
+    
+    def parse_mtl_colors(self, mtl_file_path):
+        """Parse colors from MTL material file"""
+        try:
+            default_color = [0.7, 0.7, 0.9]  # Default blue-gray
+            
+            with open(mtl_file_path, 'r') as file:
+                for line in file:
+                    line = line.strip()
+                    if line.startswith('Kd '):  # Diffuse color
+                        parts = line.split()
+                        if len(parts) >= 4:
+                            r, g, b = float(parts[1]), float(parts[2]), float(parts[3])
+                            return np.array([[r, g, b]])  # Single color for all vertices
+            
+            return np.array([default_color])
+            
+        except Exception:
+            return None
     
     def show_detailed_status(self):
         """Show detailed status information"""
@@ -1123,29 +1863,86 @@ LOCAL FOLDER STATUS:
         except Exception as e:
             self.log_message(f"⚠️ Could not load config: {str(e)}")
     
-    def disable_buttons_during_scan(self):
-        """Disable all buttons except FOLDERS and STATUS during scanning"""
+    def disable_buttons_during_operation(self, operation_type="scan"):
+        """Disable buttons during operations, keeping only STATUS and FOLDERS active"""
+        # Always disable main workflow buttons during any operation
         self.connect_btn.config(state=tk.DISABLED)
         self.scan_btn.config(state=tk.DISABLED)
         self.model_btn.config(state=tk.DISABLED)
+        self.view_btn.config(state=tk.DISABLED)
         
         # Find and disable other buttons except FOLDERS and STATUS
         for widget in self.root.winfo_children():
             self._disable_buttons_recursive(widget, ["FOLDERS", "STATUS"])
     
-    def enable_buttons_after_scan(self):
-        """Re-enable buttons after scanning completes"""
-        # Re-enable main workflow buttons
+    def enable_buttons_after_operation(self, operation_type="scan"):
+        """Re-enable buttons after operations complete, with proper state logic"""
+        # Re-enable buttons based on current state
         self.connect_btn.config(state=tk.NORMAL)
+        
+        # SCAN button: only enabled if connected
         self.scan_btn.config(state=tk.NORMAL if self.connection_status else tk.DISABLED)
-        self.model_btn.config(state=tk.NORMAL)  # Will be properly set by update_status_display
+        
+        # MODEL button: only enabled if photos exist (either downloaded or local)
+        photos_available = self.check_local_photos_exist()
+        self.model_btn.config(state=tk.NORMAL if photos_available else tk.DISABLED)
+        
+        # VIEW 3D button: only enabled if model files exist
+        model_files_exist = self.check_model_files_exist()
+        self.view_btn.config(state=tk.NORMAL if model_files_exist else tk.DISABLED)
         
         # Re-enable all other buttons that were disabled
         for widget in self.root.winfo_children():
             self._enable_buttons_recursive(widget, ["FOLDERS", "STATUS"])
         
-        # Update status display to set proper button states
+        # Update status display to ensure consistency
         self.update_status_display()
+    
+    def update_button_states(self):
+        """Update button states based on current workflow status"""
+        # Only update if no operation is currently active
+        if not self.scanning_active and not self.model_active:
+            # CONNECT button: always enabled
+            self.connect_btn.config(state=tk.NORMAL)
+            
+            # SCAN button: only enabled if connected and not currently scanning
+            scan_enabled = self.connection_status
+            self.scan_btn.config(state=tk.NORMAL if scan_enabled else tk.DISABLED)
+            
+            # MODEL button: only enabled if photos exist and not currently creating model
+            photos_available = self.check_local_photos_exist()
+            self.model_btn.config(state=tk.NORMAL if photos_available else tk.DISABLED)
+            
+            # VIEW 3D button: only enabled if model files exist AND viewer is not already open
+            model_files_exist = self.check_model_files_exist()
+            view_enabled = model_files_exist and not self.viewer_active
+            self.view_btn.config(state=tk.NORMAL if view_enabled else tk.DISABLED)
+
+            self.stop_btn.config(state=tk.NORMAL if self.scanning_active else tk.DISABLED)
+
+            laser_enabled = self.connection_status and not self.scanning_active and not self.model_active
+    
+            self.laser_on_btn.config(state=tk.NORMAL if laser_enabled else tk.DISABLED)
+            self.laser_off_btn.config(state=tk.NORMAL if laser_enabled else tk.DISABLED)
+            self.led_on_btn.config(state=tk.NORMAL if laser_enabled else tk.DISABLED)
+            self.led_off_btn.config(state=tk.NORMAL if laser_enabled else tk.DISABLED)
+            
+            # Debug logging (only when state changes would be visible)
+            # self.log_message(f"🔧 Button states updated - Scan: {'✅' if scan_enabled else '❌'}, Model: {'✅' if photos_available else '❌'}")
+        else:
+            # During operations, buttons should remain disabled
+            # Debug logging for operations in progress
+            operation = "scanning" if self.scanning_active else "model creation"
+            # self.log_message(f"🔧 Buttons remain disabled during {operation}")
+            pass
+    
+    def disable_buttons_during_scan(self):
+        """Legacy method - redirect to new method"""
+        self.disable_buttons_during_operation("scan")
+    
+    def enable_buttons_after_scan(self):
+        """Legacy method - redirect to new method"""
+        self.enable_buttons_after_operation("scan")
     
     def _disable_buttons_recursive(self, widget, exceptions):
         """Recursively disable buttons except those in exceptions list"""
@@ -1179,14 +1976,63 @@ def main():
     root = tk.Tk()
     app = ScannerGUI(root)
     
-    # Handle window closing
+    # Handle window closing properly
     def on_closing():
-        if app.ssh_client:
-            app.ssh_client.close()
-        root.destroy()
+        try:
+            # Set shutdown flag to prevent further operations
+            app.shutting_down = True
+            
+            print("Shutting down application...")
+            
+            # Close web viewer if active
+            if app.viewer_active:
+                print("Closing web viewer...")
+                try:
+                    app.close_web_viewer()
+                except:
+                    pass
+            
+            # Close SSH connection if open
+            if app.ssh_client:
+                print("Closing SSH connection...")
+                try:
+                    app.ssh_client.close()
+                except:
+                    pass
+            
+            # Close any matplotlib windows
+            try:
+                import matplotlib.pyplot as plt
+                plt.close('all')
+                print("Closed matplotlib windows")
+            except:
+                pass
+            
+            print("Terminating application...")
+            
+            # Destroy the root window
+            root.quit()  # Exit mainloop
+            root.destroy()  # Destroy window
+            
+            print("Application closed successfully")
+            
+        except Exception as e:
+            print(f"Error during shutdown: {e}")
+            # Force exit if normal shutdown fails
+            try:
+                import sys
+                sys.exit(0)
+            except:
+                pass
     
+    # Set window close protocol
     root.protocol("WM_DELETE_WINDOW", on_closing)
-    root.mainloop()
+    
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        print("\nKeyboard interrupt received, shutting down...")
+        on_closing()
 
 if __name__ == "__main__":
     main() 

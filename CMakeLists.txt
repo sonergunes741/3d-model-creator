@@ -18,6 +18,12 @@ find_package(PCL 1.8 REQUIRED COMPONENTS common io filters surface features kdtr
 find_package(Eigen3 REQUIRED)
 find_package(assimp REQUIRED)
 
+# OpenGL kütüphanelerini bul (3D viewer için)
+find_package(OpenGL REQUIRED)
+find_package(glfw3 REQUIRED)
+find_package(GLEW REQUIRED)
+find_package(glm REQUIRED)
+
 # Include dizinlerini ayarla
 include_directories(
     ${OpenCV_INCLUDE_DIRS}
@@ -50,6 +56,25 @@ target_link_libraries(3DModelCreator
 
 # Output dosyasının konumunu ayarla
 set_target_properties(3DModelCreator PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+# 3D Model Viewer (OpenGL) executable
+add_executable(ModelViewer
+    src/viewer_main.cpp
+    src/ModelViewer.cpp
+)
+
+# OpenGL viewer kütüphanelerini bağla
+target_link_libraries(ModelViewer
+    ${OPENGL_LIBRARIES}
+    glfw
+    GLEW::GLEW
+    glm::glm
+)
+
+# Viewer output konumunu ayarla
+set_target_properties(ModelViewer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 

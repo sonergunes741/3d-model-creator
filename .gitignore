@@ -9,6 +9,12 @@ scan/color/
 gui/scan/
 gui/scan/laser/
 gui/scan/color/
+bardak-v1/
+scan_original/
+scan2/
+lazer/
+
+.vscode/
 
 # Generated output files
 *.obj

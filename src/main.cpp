@@ -189,10 +189,10 @@ int main(int argc, char** argv) {
     pointCloudBuilder.setScanParameters(60.0f, 0.0f, 0.0f, 0.0f);  // Increased radius from 50.0f to 60.0f
     
     // Optimum mesh kalitesi için 14 derinlik kullan (çok yüksek çözünürlük)
-    MeshCreator meshCreator(16);
+    MeshCreator meshCreator(14);
     
     // Set more aggressive smoothing parameters
-    meshCreator.setSmoothingParameters(2000, 0.02f);
+    meshCreator.setSmoothingParameters(200, 0.001f);
     
     ColorMapper colorMapper;
     MeshExporter meshExporter;

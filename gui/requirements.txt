@@ -1,1 +1,4 @@
-paramiko>=2.7.0 
+paramiko>=2.7.0
+matplotlib>=3.3.0
+numpy>=1.19.0
+requests>=2.25.0 
