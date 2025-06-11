@@ -1,6 +1,6 @@
 # 3D Model Oluşturma Modülü
 
-Bu modül, lazer ve LED aydınlatmalı fotoğrafları işleyerek nesnenin 3D modelini oluşturur ve OBJ/MTL/PNG formatında dışa aktarır.
+Bu modül, lazer ve LED aydınlatmalı fotoğrafları işleyerek nesnenin 3D modelini oluşturur ve OBJ formatında dışa aktarır.
 
 ## Özellikler
 
@@ -97,13 +97,10 @@ Eğer yalnızca 3D modelleme algoritmasını çalıştırmak istiyorsanız, bu k
 
 ## Çıktı
 
-Program, belirtilen yola üç dosya oluşturur:
+Program, belirtilen yola şu dosyayı oluşturur:
 
 1. `model.obj`: 3D mesh geometrisi
-2. `model.mtl`: Materyal tanımları
-3. `model.png`: Texture görüntüsü
 
-Bu dosyalar birlikte bir 3D model oluşturur ve Unreal Engine dahil birçok 3D modelleme yazılımı tarafından desteklenir.
 
 ## Ek Notlar
 
