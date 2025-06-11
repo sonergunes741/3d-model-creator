@@ -3,12 +3,6 @@ build/
 build/output/
 
 # Scan directories (downloaded photos)
-scan/
-scan/laser/
-scan/color/
-gui/scan/
-gui/scan/laser/
-gui/scan/color/
 bardak-v1/
 scan_original/
 scan2/
