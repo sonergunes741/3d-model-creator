@@ -1,87 +1,79 @@
-# 3D Scanner GUI Application
+# 3D Tarayıcı GUI Uygulaması
 
-A comprehensive desktop GUI application for controlling the entire 3D scanning workflow, from connecting to the Raspberry Pi scanner to viewing the generated 3D models.
+Raspberry Pi tarayıcıya bağlanmaktan oluşturulan 3D modelleri görüntülemeye kadar tüm 3D tarama iş akışını kontrol eden kapsamlı bir masaüstü GUI uygulaması.
 
-## 🌟 Features
+## 🌟 Özellikler
 
-- **SSH Connectivity**: Secure connection to Raspberry Pi scanner
-- **Real-time Progress Monitoring**: Live updates during scanning process
-- **Automatic File Management**: Download and organize scan results
-- **Configuration Management**: Save and load connection settings
-- **Comprehensive Logging**: Detailed operation logs with timestamps
+- **SSH Bağlantısı**: Raspberry Pi tarayıcıya güvenli bağlantı
+- **Gerçek Zamanlı İlerleme İzleme**: Tarama sürecinde canlı güncellemeler
+- **Otomatik Dosya Yönetimi**: Tarama sonuçlarını indirme ve düzenleme
+- **Yapılandırma Yönetimi**: Bağlantı ayarlarını kaydetme ve yükleme
+- **Kapsamlı Günlük Kaydı**: Zaman damgalı detaylı işlem günlükleri
 
+## 📋 Gereksinimler
 
-## 📋 Requirements
-
-### System Requirements
+### Sistem Gereksinimleri
 - Python 3.7+
-- tkinter (usually included with Python)
-- Network access to Raspberry Pi
+- tkinter (genellikle Python ile birlikte gelir)
+- Raspberry Pi'ye ağ erişimi
 
-### Python Dependencies
+### Python Bağımlılıkları
 ```bash
 pip install paramiko>=2.7.0
 ```
 
-Or install via apt in Docker:
-```bash
-apt update && apt install python3-paramiko
-```
 
-## 🚀 Quick Start
+## 🚀 Hızlı Başlangıç
 
-### 1. Installation
+### 1. Kurulum
 ```bash
-# Clone or download the GUI directory
+# GUI dizinini klonlayın veya indirin
 cd gui/
 
-# Install dependencies
+# Bağımlılıkları yükleyin
 pip install -r requirements.txt
-# OR in Docker:
-# apt install python3-paramiko
 ```
 
-### 2. Run the Application
+### 2. Uygulamayı Çalıştırın
 ```bash
-# Method 1: Direct execution
+# Yöntem 1: Doğrudan çalıştırma
 python3 3d_scanner_gui.py
 
-# Method 2: Using launcher (checks dependencies)
+# Yöntem 2: Başlatıcı kullanarak (bağımlılıkları kontrol eder)
 python3 run_gui.py
 ```
 
-### 3. Configuration
-1. **Connection Tab**: Enter Raspberry Pi details
-   - Host: `realityshapers.local` (or IP address)
-   - Username: `realityshapers`
-   - Password: `rs123`
-   - Port: `22`
+### 3. Yapılandırma
+1. **Bağlantı Sekmesi**: Raspberry Pi detaylarını girin
+   - Host: `realityshapers.local` (veya IP adresi)
+   - Kullanıcı Adı: `realityshapers`
+   - Şifre: `rs123`
+   - Port: `5000`
 
-2. **Test Connection**: Click "Test Connection" to verify
+2. **Bağlantıyı Test Et**: Doğrulamak için "Test Connection" düğmesine tıklayın
 
-3. **Settings Tab**: Configure paths if needed
-   - Remote paths: `/home/pi/photos/laser` and `/home/pi/photos/led`
-   - Local paths: `scan/laser` and `scan/color`
+3. **Ayarlar Sekmesi**: Gerekirse yolları yapılandırın
+   - Uzak yollar: `/home/pi/photos/laser` ve `/home/pi/photos/led`
+   - Yerel yollar: `scan/laser` ve `scan/color`
 
-## 🔄 Workflow
+## 🔄 İş Akışı
 
-### Complete 3D Scanning Process:
+### Tam 3D Tarama Süreci:
 
-1. **Connect to Pi** (Connection Tab)
-   - Enter connection details
-   - Test connection
-   - Status shows "Connected ✅"
+1. **Pi'ye Bağlan** (Bağlantı Sekmesi)
+   - Bağlantı detaylarını girin
+   - Bağlantıyı test edin
+   - Durum "Connected ✅" gösterir
 
-2. **Capture Images** (3D Scanning Tab)
-   - Click "🔄 Start Full Scan"
-   - Monitor progress in real-time
+2. **Görüntüleri Yakala** (3D Tarama Sekmesi)
+   - "🔄 Start Full Scan" düğmesine tıklayın
+   - İlerlemeyi gerçek zamanlı olarak izleyin
 
-3. **Download & Process** (Automatic)
-   - Photos downloaded from Pi
-   - 3D model creator runs locally
-   - Progress shown with detailed logs
+3. **İndir ve İşle** (Otomatik)
+   - Fotoğraflar Pi'den indirilir
+   - 3D model oluşturucu yerel olarak çalışır
+   - İlerleme detaylı log lar ile gösterilir
 
-4. **View Results** (Output Files Tab)
-   - Browse generated files
-   - Click "🎨 View 3D" for web viewer
-   - Download files if needed
+4. **Sonuçları Görüntüle** (Çıktı Dosyaları Sekmesi)
+   - Oluşturulan dosyalara göz atın
+   - Web görüntüleyici için "🎨 View 3D" düğmesine tıklayın
