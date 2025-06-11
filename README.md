@@ -20,6 +20,19 @@ Bu modül, lazer ve LED aydınlatmalı fotoğrafları işleyerek nesnenin 3D mod
 
 ## Kurulum
 
+Uygulamayı iki farklı şekilde çalıştırabilirsiniz:
+
+1. **GUI Uygulamasını Çalıştırma:**
+   Eğer doğrudan kullanıcı arayüzü ile uygulamayı çalıştırmak istiyorsanız, terminal üzerinden:
+   ```bash
+   cd gui
+   python3 run_gui.py
+   ```
+   komutlarını çalıştırmanız yeterlidir.
+
+2. **3D Modelleme Algoritmasını Çalıştırma:**
+   Eğer yalnızca 3D modelleme algoritmasını çalıştırmak istiyorsanız, aşağıdaki adımları izleyin:
+
 ### Bağımlılıkları Yükleme
 
 Ubuntu/Debian tabanlı sistemler için:
@@ -46,6 +59,12 @@ cmake ..
 # Derle
 make -j4
 ```
+
+### Uygulamayı Çalıştırma
+
+Uygulamayı kullanırken sadece hazır bir veri seti ile modelleme yapmak isterseniz, [bu Google Drive linkinden](https://drive.google.com/drive/folders/1ks7azBOS-bTONS5KZfvoTU17vXnqz7C8?usp=sharing) `laser` ve `scan` klasörlerini indirin. Ardından, bu klasörleri `gui` klasöründeki `laser` ve `scan` klasörleriyle değiştirin. 
+
+Eğer yalnızca 3D modelleme algoritmasını çalıştırmak istiyorsanız, bu klasörleri(drive'daki scan ve laser) projenin ana klasöründeki `scan` klasörü içindeki `laser` ve `color` klasörleriyle değiştirin.
 
 ## Kullanım
 
